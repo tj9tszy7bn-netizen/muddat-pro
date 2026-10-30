@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>MuddatPro — Smart Srok Control</title>
+  <title>MuddatPro — Srok Control</title>
 
   <!-- PWA & iOS "На экран Домой" Meta teglari -->
   <link rel="manifest" href="./manifest.json" />
@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="MuddatPro" />
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10609/10609328.png" />
 
-  <!-- Tailwind CSS, Shtrix-kod Kamera Skaneri (html5-qrcode) va SheetJS (Excel o'qish uchun) -->
+  <!-- Tailwind CSS, Shtrix-kod Skaneri va SheetJS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -40,33 +40,30 @@
 </head>
 <body class="min-h-screen select-none">
 
-  <!-- HEADER -->
+  <!-- HEADER (Baza haqida hech qanday ma'lumot yo'q) -->
   <header class="sticky top-0 z-30 glass px-4 py-3 flex items-center justify-between">
     <div class="flex items-center gap-2.5">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-lg shadow-lg shadow-emerald-500/20">
+      <!-- MAXFIY TUGMA: Shu "M" belgisini 5 marta tez bossang, Excel bazani yuklash oynasi ochiladi -->
+      <div onclick="secretAdminTap()" class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-lg shadow-lg shadow-emerald-500/20 cursor-pointer active:scale-95 transition">
         M
       </div>
       <div>
         <div class="flex items-center gap-1.5">
           <h1 class="font-bold text-base tracking-tight">MuddatPro</h1>
-          <span id="dbBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
-            Yuklanmoqda...
+          <span id="sysStatus" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
+            Online
           </span>
         </div>
-        <p class="text-[11px] text-slate-400">Doʻkon srok va shtrix-kod tizimi</p>
+        <p class="text-[11px] text-slate-400">Aqlli srok nazorati tizimi</p>
       </div>
     </div>
 
     <div class="flex items-center gap-2">
-      <!-- "На экран Домой" o'rnatish tugmasi -->
-      <button onclick="openInstallModal()" class="px-2.5 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold flex items-center gap-1 active:scale-95 transition">
-        📲 Ekranga
+      <button onclick="openInstallModal()" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold flex items-center gap-1 active:scale-95 transition">
+        📲 Ekranga oʻrnatish
       </button>
-      <!-- Excel yoki JSON yuklash -->
-      <label class="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold cursor-pointer active:scale-95 transition">
-        📂 Baza
-        <input type="file" id="fileInput" accept=".xlsx,.xls,.json" class="hidden" onchange="handleFileUpload(event)" />
-      </label>
+      <!-- Yashirin fayl input (faqat admin 5 marta bosganda ishlaydi) -->
+      <input type="file" id="secretFileInput" accept=".xlsx,.xls,.json" class="hidden" onchange="handleSecretUpload(event)" />
     </div>
   </header>
 
@@ -99,7 +96,7 @@
 
       <!-- Svetofor 3 ta Karta -->
       <div class="grid grid-cols-3 gap-2.5">
-        <button onclick="setFilterStatus('critical')" id="btn-critical" class="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-left transition active:scale-95">
+        <button onclick="setFilterStatus('critical')" class="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-left transition active:scale-95">
           <div class="flex justify-between items-center">
             <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
             <span class="text-[10px] font-bold text-rose-400 uppercase">0-2 kun</span>
@@ -108,7 +105,7 @@
           <p class="text-[11px] text-rose-300/80">Kritik / Oʻtgan</p>
         </button>
 
-        <button onclick="setFilterStatus('warning')" id="btn-warning" class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left transition active:scale-95">
+        <button onclick="setFilterStatus('warning')" class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left transition active:scale-95">
           <div class="flex justify-between items-center">
             <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
             <span class="text-[10px] font-bold text-amber-300 uppercase">3-7 kun</span>
@@ -117,7 +114,7 @@
           <p class="text-[11px] text-amber-200/80">Aksiya kerak</p>
         </button>
 
-        <button onclick="setFilterStatus('safe')" id="btn-safe" class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-left transition active:scale-95">
+        <button onclick="setFilterStatus('safe')" class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-left transition active:scale-95">
           <div class="flex justify-between items-center">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
             <span class="text-[10px] font-bold text-emerald-300 uppercase">8+ kun</span>
@@ -127,55 +124,57 @@
         </button>
       </div>
 
-      <!-- Группа материалов (Kategoriya) filtri -->
+      <!-- Bo'limlar filtri -->
       <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-        <button onclick="setFilterCat('ALL')" class="cat-pill px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold shrink-0">Barchasi</button>
-        <button onclick="setFilterCat('U')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🍰 U (Tort/Pishiriq)</button>
-        <button onclick="setFilterCat('F')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🧀 F (Sut/Gastronom)</button>
-        <button onclick="setFilterCat('O')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🍉 O (Meva/Sabzavot)</button>
-        <button onclick="setFilterCat('D')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🥫 D (Oziq-ovqat)</button>
-        <button onclick="setFilterCat('S')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">❄️ S (Muzlatilgan)</button>
+        <button onclick="setFilterCat('ALL')" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold shrink-0">Barchasi</button>
+        <button onclick="setFilterCat('U')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🍰 Qandolat</button>
+        <button onclick="setFilterCat('F')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🧀 Sut va Gastronom</button>
+        <button onclick="setFilterCat('O')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🍉 Meva-sabzavot</button>
+        <button onclick="setFilterCat('D')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🥫 Oziq-ovqat</button>
+        <button onclick="setFilterCat('S')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">❄️ Muzlatilgan</button>
       </div>
 
-      <!-- Ro'yxat -->
+      <!-- Srokdagi tovarlar ro'yxati -->
       <div id="inventoryList" class="space-y-2.5"></div>
     </section>
 
-    <!-- TAB 2: SKANER + PARTIYA QO'SHISH -->
+    <!-- TAB 2: SKANER VA KOD ORQALI QO'SHISH -->
     <section id="tab-scanner" class="hidden space-y-4">
       <div class="p-4 rounded-2xl glass space-y-3">
         <div class="flex items-center justify-between">
-          <h2 class="font-bold text-sm">📷 Shtrix-kod skaneri yoki Qidiruv</h2>
+          <h2 class="font-bold text-sm">📷 Shtrix-kod / SAP-kod kiritish</h2>
           <button onclick="toggleCamera()" id="camBtn" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs active:scale-95 transition">
             Kamerani yoqish
           </button>
         </div>
 
-        <!-- Haqiqiy Kamera oynasi -->
+        <!-- Kamera oynasi -->
         <div id="readerWrapper" class="hidden space-y-2">
           <div id="reader" class="w-full overflow-hidden rounded-2xl border border-emerald-500/40"></div>
-          <p class="text-center text-[11px] text-emerald-400">Shtrix-kodni ramka ichiga toʻgʻrilang...</p>
+          <p class="text-center text-[11px] text-emerald-400">Shtrix-kodni kameraga tuting...</p>
         </div>
 
-        <!-- Qidiruv inputi -->
-        <div class="relative">
+        <!-- Kod kiritish maydoni (faqat kod yozilganda natija chiqadi) -->
+        <div class="flex gap-2">
           <input
             type="text"
             id="scanInput"
-            oninput="searchDatabase(this.value)"
-            placeholder="Shtrix-kod, SAP-kod yoki tovar nomi..."
-            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            oninput="lookupByCode(this.value)"
+            placeholder="Bar-kod yoki SAP-kodni kiriting..."
+            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
           />
-          <div id="searchResults" class="mt-2 space-y-1.5 max-h-56 overflow-y-auto"></div>
+          <button onclick="clearScannerInput()" class="px-3 rounded-xl bg-slate-800 text-slate-400 text-xs font-bold">✕</button>
         </div>
+        <p id="lookupStatus" class="text-[11px] text-slate-400">Shtrix-kodni skanerlang yoki kamida 4 ta raqam kiriting.</p>
+        <div id="searchResults" class="space-y-1.5"></div>
       </div>
 
-      <!-- Tanlangan tovarga srok kiritish formasi -->
+      <!-- Topilgan mahsulotga srok belgilash kartasi -->
       <div id="addFormCard" class="p-4 rounded-2xl glass space-y-3">
         <div class="flex justify-between items-start">
           <div>
-            <span id="selectedSap" class="text-[11px] font-mono text-emerald-400">SAP: Tanlanmagan</span>
-            <h3 id="selectedName" class="font-bold text-base mt-0.5">Tovarni skanerlang yoki tanlang</h3>
+            <span id="selectedSap" class="text-[11px] font-mono text-emerald-400">KOD: —</span>
+            <h3 id="selectedName" class="font-bold text-base mt-0.5 text-slate-300">Mahsulot hali tanlanmagan</h3>
           </div>
           <span id="selectedUnitBadge" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-bold text-slate-300">ШТ</span>
         </div>
@@ -186,41 +185,22 @@
             <input type="date" id="expDateInput" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" />
           </div>
           <div>
-            <label id="qtyLabel" class="text-[11px] text-slate-400">Miqdori (ШТ / КГ)</label>
+            <label class="text-[11px] text-slate-400">Miqdori (ШТ / КГ)</label>
             <input type="number" id="qtyInput" step="1" value="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" />
           </div>
         </div>
 
-        <!-- Tezkor miqdor tugmalari (ШТ yoki КГ ga qarab o'zgaradi) -->
+        <!-- Tezkor miqdor tugmalari -->
         <div id="presetButtons" class="flex gap-1.5 flex-wrap"></div>
 
         <div>
-          <label class="text-[11px] text-slate-400">1 dona/kg taxminiy narxi (soʻmda — foyda hisobi uchun)</label>
+          <label class="text-[11px] text-slate-400">1 dona/kg narxi (soʻmda)</label>
           <input type="number" id="priceInput" value="25000" step="1000" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" />
         </div>
 
         <button onclick="saveBatch()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition">
-          ➕ Roʻyxatga qoʻshish
+          ➕ Nazoratga qoʻshish
         </button>
-      </div>
-    </section>
-
-    <!-- TAB 3: BAZA QIDIRUVI -->
-    <section id="tab-db" class="hidden space-y-3">
-      <div class="p-4 rounded-2xl glass space-y-3">
-        <div class="flex justify-between items-center">
-          <h2 class="font-bold text-sm">📦 Shtrix-kodlar Bazasi</h2>
-          <button onclick="exportCleanJson()" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-            💾 baza.json yuklab olish
-          </button>
-        </div>
-        <input
-          type="text"
-          oninput="renderDbCatalog(this.value)"
-          placeholder="41,313 ta tovar ichidan qidirish..."
-          class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white"
-        />
-        <div id="dbCatalogList" class="space-y-2 max-h-[60vh] overflow-y-auto"></div>
       </div>
     </section>
 
@@ -236,18 +216,15 @@
       <div class="space-y-3 text-xs text-slate-300">
         <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
           <p class="font-bold text-white">🍏 iPhone (Safari orqali):</p>
-          <p>1. Pastdagi <b>«Поделиться» (Ulashish — tepaga qaragan strelka)</b> tugmasini bosing.</p>
-          <p>2. Roʻyxatdan <b>«На экран „Домой“» (Add to Home Screen)</b> bandini tanlang va <b>Добавить</b> bosing.</p>
+          <p>1. Pastdagi <b>«Поделиться» (Ulashish)</b> tugmasini bosing.</p>
+          <p>2. Roʻyxatdan <b>«На экран „Домой“»</b> bandini tanlang va <b>Добавить</b> bosing.</p>
         </div>
         <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
           <p class="font-bold text-white">🤖 Android (Chrome orqali):</p>
-          <p>1. Yuqori oʻng burchakdagi <b>⋮ (3 ta nuqta)</b> menyusini bosing.</p>
-          <p>2. <b>«Добавить на главный экран» (Установить приложение)</b> tugmasini bosing.</p>
+          <p>1. Yuqori oʻng burchakdagi <b>⋮ (3 nuqta)</b> menyusini bosing.</p>
+          <p>2. <b>«Добавить на главный экран»</b> tugmasini bosing.</p>
         </div>
       </div>
-      <button id="nativeInstallBtn" onclick="triggerNativeInstall()" class="hidden w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">
-        ⚡ Avtomatik oʻrnatish
-      </button>
     </div>
   </div>
 
@@ -276,8 +253,8 @@
     </div>
   </div>
 
-  <!-- BOTTOM NAVIGATION -->
-  <nav class="fixed bottom-0 inset-x-0 z-30 glass px-6 py-2 flex justify-around items-center">
+  <!-- BOTTOM NAVIGATION (Faqat 2 ta asosiy bo'lim: Svetofor va Skaner) -->
+  <nav class="fixed bottom-0 inset-x-0 z-30 glass px-10 py-2 flex justify-around items-center">
     <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center gap-0.5 text-emerald-400 font-bold text-[11px]">
       <span class="text-lg">🚦</span>
       <span>Svetofor</span>
@@ -288,15 +265,11 @@
       </span>
       <span>Skaner +</span>
     </button>
-    <button onclick="switchTab('db')" id="nav-db" class="flex flex-col items-center gap-0.5 text-slate-400 font-semibold text-[11px]">
-      <span class="text-lg">📦</span>
-      <span>Baza</span>
-    </button>
   </nav>
 
   <script>
-    // 1. STANDART STARTER BAZA (Bar-kod.XLSX dan olingan haqiqiy namuna, baza.json yuklanguncha ishlaydi)
-    let DB = [
+    // YASHIRIN ICHKI BAZA (Foydalanuvchiga hech qachon ro'yxat bo'lib ko'rinmaydi)
+    let HIDDEN_DB = [
       ["117030202-00189", "Стаканчик VIOLETTE Блаженство 100г", "ШТ", "4780090180603, 4780090180559", "U"],
       ["117030202-00297", "Пирожное Violette Ассорти эклер 150г±10г", "ШТ", "4780090180443, 4780090180818", "U"],
       ["117040304-00024", "Монэ Эклер", "ШТ", "311147140, 4780099240421, 21304514, 4780099240346", "U"],
@@ -309,18 +282,207 @@
       ["118010101-00001", "Колбаски ЛАЗЗАТ с сыром зам., вес", "КГ", "2080146", "S"]
     ];
 
-    let BARCODE_MAP = new Map();
+    let BARCODE_INDEX = new Map();
+    let SAP_INDEX = new Map();
     let currentFilterStatus = 'ALL';
     let currentFilterCat = 'ALL';
     let selectedProduct = null;
     let html5QrCode = null;
     let cameraActive = false;
 
-    // Srokdagi partiyalar va Moliya ko'rsatkichlari (LocalStorage)
+    // Maxfiy admin kirish hisoblagichi (Logotipni 5 marta bosish)
+    let adminTapCount = 0;
+    let adminTapTimer = null;
+
+    function secretAdminTap() {
+      adminTapCount++;
+      clearTimeout(adminTapTimer);
+      if (adminTapCount >= 5) {
+        adminTapCount = 0;
+        document.getElementById('secretFileInput').click();
+      } else {
+        adminTapTimer = setTimeout(() => { adminTapCount = 0; }, 1500);
+      }
+    }
+
+    // IndexedDB orqali katta bazani brauzerning yashirin xotirasida saqlash
+    function saveDbToIndexedDB(data) {
+      const req = indexedDB.open('MuddatProSecretDB', 1);
+      req.onupgradeneeded = (e) => {
+        e.target.result.createObjectStore('store');
+      };
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction('store', 'readwrite');
+        tx.objectStore('store').put(data, 'catalog');
+      };
+    }
+
+    function loadDbFromIndexedDB() {
+      return new Promise((resolve) => {
+        const req = indexedDB.open('MuddatProSecretDB', 1);
+        req.onupgradeneeded = (e) => {
+          e.target.result.createObjectStore('store');
+        };
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          const tx = db.transaction('store', 'readonly');
+          const getReq = tx.objectStore('store').get('catalog');
+          getReq.onsuccess = () => resolve(getReq.result || null);
+          getReq.onerror = () => resolve(null);
+        };
+        req.onerror = () => resolve(null);
+      });
+    }
+
+    // Bazani yashirin indekslash (Faqat Bar-kod va SAP-kod orqali topish uchun)
+    function buildSilentIndex() {
+      BARCODE_INDEX.clear();
+      SAP_INDEX.clear();
+      HIDDEN_DB.forEach((item) => {
+        const [sap, name, unit, barcodesStr, cat] = item;
+        const bcs = String(barcodesStr).split(',').map((s) => s.trim()).filter(Boolean);
+        const prodObj = { sap, name, unit, barcode: bcs[0] || '', cat };
+        SAP_INDEX.set(sap.toLowerCase(), prodObj);
+        // SAP kodning oxirgi raqamlari bo'yicha ham qidirish qulay bo'lishi uchun
+        bcs.forEach((bc) => BARCODE_INDEX.set(bc, { sap, name, unit, barcode: bc, cat }));
+      });
+    }
+
+    async function initSilentDatabase() {
+      // 1. Avval telefonning yashirin IndexedDB xotirasini tekshiramiz
+      const cached = await loadDbFromIndexedDB();
+      if (cached && Array.isArray(cached) && cached.length > 0) {
+        HIDDEN_DB = cached;
+        buildSilentIndex();
+        return;
+      }
+      // 2. Agar serverda baza.json bo'lsa, fon rejimida tortib oladi
+      try {
+        const res = await fetch('./baza.json');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            HIDDEN_DB = data;
+            saveDbToIndexedDB(data);
+          }
+        }
+      } catch (e) {}
+      buildSilentIndex();
+    }
+
+    // Maxfiy admin orqali Bar-kod.XLSX yuklanganda
+    function handleSecretUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('sysStatus').textContent = "Yangilanmoqda...";
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const data = new Uint8Array(ev.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+        const temp = [];
+        rows.forEach((r) => {
+          const name = r['Краткий текст материала'];
+          const bc = r['Бар-код'];
+          const grp = String(r['Группа материалов'] || 'D');
+          if (name && bc && grp[0] !== 'M') {
+            temp.push([
+              String(r['Материал'] || '').trim(),
+              String(name).trim(),
+              String(r['Базовая ЕИ'] || 'ШТ').trim(),
+              String(bc).replace(/\.0$/, '').trim(),
+              grp[0]
+            ]);
+          }
+        });
+        HIDDEN_DB = temp;
+        saveDbToIndexedDB(temp);
+        buildSilentIndex();
+        document.getElementById('sysStatus').textContent = "Online";
+        alert("Ichki baza muvaffaqiyatli yangilandi va yashirin xotiraga saqlandi!");
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // FAQAT BAR-KOD YOKI SAP-KOD YOZILGANDA QIDIRISH (Ochiq ro'yxat chiqmaydi)
+    function lookupByCode(rawVal) {
+      const q = rawVal.trim();
+      const box = document.getElementById('searchResults');
+      const status = document.getElementById('lookupStatus');
+
+      if (!q) {
+        box.innerHTML = '';
+        status.textContent = "Shtrix-kodni skanerlang yoki SAP-kodni kiriting.";
+        return;
+      }
+
+      // 1. Aniq Shtrix-kod mos tushsa — darhol formaga chiqaradi!
+      if (BARCODE_INDEX.has(q)) {
+        const prod = BARCODE_INDEX.get(q);
+        selectProductForForm(prod);
+        box.innerHTML = '';
+        status.innerHTML = `<span class="text-emerald-400 font-bold">✅ Shtrix-kod boʻyicha topildi!</span>`;
+        return;
+      }
+
+      // 2. Aniq SAP-kod mos tushsa — darhol formaga chiqaradi!
+      if (SAP_INDEX.has(q.toLowerCase())) {
+        const prod = SAP_INDEX.get(q.toLowerCase());
+        selectProductForForm(prod);
+        box.innerHTML = '';
+        status.innerHTML = `<span class="text-emerald-400 font-bold">✅ SAP-kod boʻyicha topildi!</span>`;
+        return;
+      }
+
+      // 3. Kamida 4 ta belgi (SAP-kod qismi yoki shtrix-kod qismi) yozilmaguncha hech narsa ko'rsatmaydi
+      if (q.length < 4) {
+        box.innerHTML = '';
+        status.textContent = "Topish uchun kamida 4 ta raqam/belgi kiriting...";
+        return;
+      }
+
+      // Faqat kod bo'yicha eng yaqin 5 ta natijani chiqaradi (butun bazani ko'rsatmaydi)
+      const matches = [];
+      const qLower = q.toLowerCase();
+      for (const item of HIDDEN_DB) {
+        const [sap, name, unit, bcs, cat] = item;
+        if (sap.toLowerCase().includes(qLower) || bcs.includes(q)) {
+          matches.push({ sap, name, unit, barcode: bcs.split(',')[0].trim(), cat });
+          if (matches.length >= 5) break;
+        }
+      }
+
+      if (matches.length === 0) {
+        box.innerHTML = '';
+        status.innerHTML = `<span class="text-rose-400">Bu kod boʻyicha mahsulot topilmadi.</span>`;
+        return;
+      }
+
+      status.textContent = `Kod boʻyicha topildi (${matches.length}):`;
+      box.innerHTML = matches.map((m) => `
+        <div onclick='selectProductForForm(${JSON.stringify(m)})' class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 flex justify-between items-center cursor-pointer active:scale-95 transition">
+          <div>
+            <p class="text-xs font-bold text-white">${m.name}</p>
+            <p class="text-[10px] text-slate-400 font-mono">SAP: ${m.sap} • Barkod: ${m.barcode}</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">${m.unit}</span>
+        </div>
+      `).join('');
+    }
+
+    function clearScannerInput() {
+      document.getElementById('scanInput').value = '';
+      document.getElementById('searchResults').innerHTML = '';
+      document.getElementById('lookupStatus').textContent = "Shtrix-kodni skanerlang yoki SAP-kodni kiriting.";
+    }
+
+    // Srokdagi partiyalar (LocalStorage)
     let batches = JSON.parse(localStorage.getItem('mp_batches') || 'null') || [
       { id: 1, sap: "117040304-00334", name: "Торт NOSTALGIA Наполеон фисташка 650г", unit: "ШТ", barcode: "22419347", cat: "U", expDate: offsetDate(1), qty: 3, price: 68000, discount: false },
-      { id: 2, sap: "160010202-00005", name: "Легендарный_колбасно-копч. сыр 200гр", unit: "ШТ", barcode: "4780075910157", cat: "F", expDate: offsetDate(4), qty: 8, price: 24000, discount: false },
-      { id: 3, sap: "161000004-00020", name: "Сыр Легендарный твердый вакуум, вес", unit: "КГ", barcode: "2064072", cat: "F", expDate: offsetDate(12), qty: 4.5, price: 95000, discount: false }
+      { id: 2, sap: "160010202-00005", name: "Легендарный_колбасно-копч. сыр 200гр", unit: "ШТ", barcode: "4780075910157", cat: "F", expDate: offsetDate(4), qty: 8, price: 24000, discount: false }
     ];
     let stats = JSON.parse(localStorage.getItem('mp_stats') || '{"saved": 420000, "loss": 65000}');
 
@@ -330,88 +492,6 @@
       return d.toISOString().split('T')[0];
     }
 
-    // 2. MULTI-BARKOD INDEKSLASH (Vergul bilan ajratilgan shtrix-kodlarni tezkor Map'ga yig'ish)
-    function indexDatabase() {
-      BARCODE_MAP.clear();
-      DB.forEach((item) => {
-        const [sap, name, unit, barcodesStr, cat] = item;
-        const bcs = String(barcodesStr).split(',').map((s) => s.trim()).filter(Boolean);
-        bcs.forEach((bc) => BARCODE_MAP.set(bc, { sap, name, unit, barcode: bc, allBarcodes: bcs, cat }));
-      });
-      document.getElementById('dbBadge').textContent = `${DB.length.toLocaleString()} tovar | ${BARCODE_MAP.size.toLocaleString()} shtrix`;
-      renderDbCatalog('');
-    }
-
-    // GitHub'dagi baza.json faylini avtomatik tortib olish
-    async function loadRemoteBaza() {
-      try {
-        const res = await fetch('./baza.json');
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            DB = data;
-          }
-        }
-      } catch (e) {
-        console.log('Local starter baza ishlatilmoqda.');
-      }
-      indexDatabase();
-    }
-
-    // 3. EXCEL (Bar-kod.XLSX) YOKI JSON FAYL YUKLANGANDA O'QISH
-    function handleFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      document.getElementById('dbBadge').textContent = "O'qilmoqda...";
-
-      if (file.name.endsWith('.json')) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          DB = JSON.parse(ev.target.result);
-          indexDatabase();
-          alert(`Muvaffaqiyatli! ${DB.length.toLocaleString()} ta tovar yuklandi.`);
-        };
-        reader.readAsText(file);
-      } else {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const data = new Uint8Array(ev.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(sheet);
-          const temp = [];
-          rows.forEach((r) => {
-            const name = r['Краткий текст материала'];
-            const bc = r['Бар-код'];
-            const grp = String(r['Группа материалов'] || 'D');
-            if (name && bc && grp[0] !== 'M') {
-              temp.push([
-                String(r['Материал'] || '').trim(),
-                String(name).trim(),
-                String(r['Базовая ЕИ'] || 'ШТ').trim(),
-                String(bc).replace(/\.0$/, '').trim(),
-                grp[0]
-              ]);
-            }
-          });
-          DB = temp;
-          indexDatabase();
-          alert(`Bar-kod.XLSX to'liq o'qildi! ${DB.length.toLocaleString()} ta tovar va ${BARCODE_MAP.size.toLocaleString()} ta shtrix-kod tayyor!`);
-        };
-        reader.readAsArrayBuffer(file);
-      }
-    }
-
-    function exportCleanJson() {
-      const blob = new Blob([JSON.stringify(DB)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'baza.json';
-      a.click();
-    }
-
-    // 4. SVETOFOR DASHBOARD RENDERI
     function daysRemaining(dateStr) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -452,7 +532,7 @@
         .sort((a, b) => daysRemaining(a.expDate) - daysRemaining(b.expDate));
 
       if (filtered.length === 0) {
-        listEl.innerHTML = `<div class="p-8 rounded-2xl glass text-center text-xs text-slate-400">Bu filtrda tovarlar yoʻq 🎉</div>`;
+        listEl.innerHTML = `<div class="p-8 rounded-2xl glass text-center text-xs text-slate-400">Hozircha bu boʻlimda tovarlar yoʻq 🎉</div>`;
         return;
       }
 
@@ -520,25 +600,24 @@
       renderDashboard();
     }
 
-    // 5. HAQIQIY KAMERA SKANERI VA QIDIRUV
     function toggleCamera() {
       const wrap = document.getElementById('readerWrapper');
       const btn = document.getElementById('camBtn');
       if (!cameraActive) {
         wrap.classList.remove('hidden');
-        btn.textContent = "Kamerani o'chirish";
+        btn.textContent = "Kamerani oʻchirish";
         html5QrCode = new Html5Qrcode("reader");
         html5QrCode.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 120 } },
           (decodedText) => {
             document.getElementById('scanInput').value = decodedText;
-            searchDatabase(decodedText);
+            lookupByCode(decodedText);
             if (navigator.vibrate) navigator.vibrate(100);
           },
           () => {}
         ).catch(() => {
-          alert("Kameraga ruxsat berilmadi yoki HTTPS/GitHub Pages orqali oching.");
+          alert("Kamerani yoqish uchun ruxsat bering.");
         });
         cameraActive = true;
       } else {
@@ -549,41 +628,13 @@
       }
     }
 
-    function searchDatabase(query) {
-      const q = query.trim().toLowerCase();
-      const box = document.getElementById('searchResults');
-      if (!q) { box.innerHTML = ''; return; }
-
-      // To'g'ridan-to'g'ri shtrix-kod bo'yicha 0.01 soniyada topish
-      if (BARCODE_MAP.has(q)) {
-        selectProductForForm(BARCODE_MAP.get(q));
-      }
-
-      const matches = [];
-      for (const item of DB) {
-        const [sap, name, unit, bcs, cat] = item;
-        if (sap.toLowerCase().includes(q) || name.toLowerCase().includes(q) || bcs.includes(q)) {
-          matches.push({ sap, name, unit, barcode: bcs.split(',')[0].trim(), cat });
-          if (matches.length >= 12) break;
-        }
-      }
-
-      box.innerHTML = matches.map((m) => `
-        <div onclick='selectProductForForm(${JSON.stringify(m)})' class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 flex justify-between items-center cursor-pointer">
-          <div>
-            <p class="text-xs font-bold text-white">${m.name}</p>
-            <p class="text-[10px] text-slate-400 font-mono">SAP: ${m.sap} | Barkod: ${m.barcode}</p>
-          </div>
-          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">${m.unit}</span>
-        </div>
-      `).join('');
-    }
-
     function selectProductForForm(prod) {
       selectedProduct = prod;
       document.getElementById('selectedSap').textContent = `SAP: ${prod.sap} • #${prod.barcode}`;
       document.getElementById('selectedName').textContent = prod.name;
+      document.getElementById('selectedName').className = "font-bold text-base mt-0.5 text-white";
       document.getElementById('selectedUnitBadge').textContent = prod.unit;
+      document.getElementById('searchResults').innerHTML = '';
 
       const qtyInput = document.getElementById('qtyInput');
       const presetBox = document.getElementById('presetButtons');
@@ -605,7 +656,7 @@
 
     function saveBatch() {
       if (!selectedProduct) {
-        alert("Avval shtrix-kodni skanerlang yoki qidiruvdan tovarni tanlang!");
+        alert("Avval shtrix-kodni skanerlang yoki SAP-kodni kiriting!");
         return;
       }
       const expDate = document.getElementById('expDateInput').value;
@@ -625,11 +676,11 @@
         discount: false
       });
 
+      clearScannerInput();
       switchTab('dashboard');
       renderDashboard();
     }
 
-    // 6. AKSIYA STIKERI VA KATALOG
     function openStickerModal(id) {
       const b = batches.find((x) => x.id === id);
       if (!b) return;
@@ -646,27 +697,8 @@
       document.getElementById('stickerModal').classList.add('hidden');
     }
 
-    function renderDbCatalog(q) {
-      const query = q.trim().toLowerCase();
-      const box = document.getElementById('dbCatalogList');
-      const slice = DB.filter(([sap, name, unit, bcs]) =>
-        !query || sap.toLowerCase().includes(query) || name.toLowerCase().includes(query) || bcs.includes(query)
-      ).slice(0, 30);
-
-      box.innerHTML = slice.map(([sap, name, unit, bcs, cat]) => `
-        <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex justify-between items-center text-xs">
-          <div>
-            <p class="font-bold text-white">${name}</p>
-            <p class="text-[10px] text-slate-400 font-mono">SAP: ${sap} | Barkod: ${bcs}</p>
-          </div>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-bold">${unit}</span>
-        </div>
-      `).join('');
-    }
-
-    // 7. NAVIGATSIYA VA PWA "НА ЭКРАН ДОМОЙ"
     function switchTab(tab) {
-      ['dashboard', 'scanner', 'db'].forEach((t) => {
+      ['dashboard', 'scanner'].forEach((t) => {
         document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
         const nav = document.getElementById(`nav-${t}`);
         if (nav) nav.className = t === tab
@@ -675,34 +707,18 @@
       });
     }
 
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      document.getElementById('nativeInstallBtn').classList.remove('hidden');
-    });
-
     function openInstallModal() {
       document.getElementById('installModal').classList.remove('hidden');
     }
     function closeInstallModal() {
       document.getElementById('installModal').classList.add('hidden');
     }
-    async function triggerNativeInstall() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        closeInstallModal();
-      }
-    }
 
-    // Boshlang'ich ishga tushirish
     document.getElementById('expDateInput').value = offsetDate(3);
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
-    loadRemoteBaza();
+    initSilentDatabase();
     renderDashboard();
   </script>
 </body>
