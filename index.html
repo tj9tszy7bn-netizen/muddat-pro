@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>MuddatPro — Smart Srok Control</title>
+
+  <!-- PWA & iOS "На экран Домой" Meta teglari -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MuddatPro" />
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10609/10609328.png" />
+
+  <!-- Tailwind CSS, Shtrix-kod Kamera Skaneri (html5-qrcode) va SheetJS (Excel o'qish uchun) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+    }
+    .glass {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    #reader video {
+      border-radius: 1rem;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body class="min-h-screen select-none">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 glass px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-lg shadow-lg shadow-emerald-500/20">
+        M
+      </div>
+      <div>
+        <div class="flex items-center gap-1.5">
+          <h1 class="font-bold text-base tracking-tight">MuddatPro</h1>
+          <span id="dbBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
+            Yuklanmoqda...
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400">Doʻkon srok va shtrix-kod tizimi</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- "На экран Домой" o'rnatish tugmasi -->
+      <button onclick="openInstallModal()" class="px-2.5 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold flex items-center gap-1 active:scale-95 transition">
+        📲 Ekranga
+      </button>
+      <!-- Excel yoki JSON yuklash -->
+      <label class="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold cursor-pointer active:scale-95 transition">
+        📂 Baza
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.json" class="hidden" onchange="handleFileUpload(event)" />
+      </label>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-4">
+
+    <!-- TAB 1: DASHBOARD (SVETOFOR) -->
+    <section id="tab-dashboard" class="space-y-4">
+      <!-- Moliyaviy Tejamkorlik Karta -->
+      <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/60 border border-emerald-500/20 shadow-xl">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">🛡️ Saqlab qolingan foyda</p>
+            <h2 id="savedMoneyText" class="text-2xl font-black text-emerald-400 mt-0.5">0 soʻm</h2>
+          </div>
+          <span class="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+            Faol nazorat
+          </span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800/80 text-xs">
+          <div>
+            <span class="text-slate-400">⚠️ Xavf ostida:</span>
+            <p id="riskMoneyText" class="font-bold text-rose-400 mt-0.5">0 soʻm</p>
+          </div>
+          <div>
+            <span class="text-slate-400">↩️ Vozvrat / Spisaniye:</span>
+            <p id="lossMoneyText" class="font-bold text-amber-400 mt-0.5">0 soʻm</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Svetofor 3 ta Karta -->
+      <div class="grid grid-cols-3 gap-2.5">
+        <button onclick="setFilterStatus('critical')" id="btn-critical" class="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-left transition active:scale-95">
+          <div class="flex justify-between items-center">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+            <span class="text-[10px] font-bold text-rose-400 uppercase">0-2 kun</span>
+          </div>
+          <p id="count-critical" class="text-2xl font-black text-white mt-2">0</p>
+          <p class="text-[11px] text-rose-300/80">Kritik / Oʻtgan</p>
+        </button>
+
+        <button onclick="setFilterStatus('warning')" id="btn-warning" class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left transition active:scale-95">
+          <div class="flex justify-between items-center">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            <span class="text-[10px] font-bold text-amber-300 uppercase">3-7 kun</span>
+          </div>
+          <p id="count-warning" class="text-2xl font-black text-white mt-2">0</p>
+          <p class="text-[11px] text-amber-200/80">Aksiya kerak</p>
+        </button>
+
+        <button onclick="setFilterStatus('safe')" id="btn-safe" class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-left transition active:scale-95">
+          <div class="flex justify-between items-center">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span class="text-[10px] font-bold text-emerald-300 uppercase">8+ kun</span>
+          </div>
+          <p id="count-safe" class="text-2xl font-black text-white mt-2">0</p>
+          <p class="text-[11px] text-emerald-200/80">Muddati yaxshi</p>
+        </button>
+      </div>
+
+      <!-- Группа материалов (Kategoriya) filtri -->
+      <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+        <button onclick="setFilterCat('ALL')" class="cat-pill px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold shrink-0">Barchasi</button>
+        <button onclick="setFilterCat('U')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🍰 U (Tort/Pishiriq)</button>
+        <button onclick="setFilterCat('F')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🧀 F (Sut/Gastronom)</button>
+        <button onclick="setFilterCat('O')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🍉 O (Meva/Sabzavot)</button>
+        <button onclick="setFilterCat('D')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🥫 D (Oziq-ovqat)</button>
+        <button onclick="setFilterCat('S')" class="cat-pill px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">❄️ S (Muzlatilgan)</button>
+      </div>
+
+      <!-- Ro'yxat -->
+      <div id="inventoryList" class="space-y-2.5"></div>
+    </section>
+
+    <!-- TAB 2: SKANER + PARTIYA QO'SHISH -->
+    <section id="tab-scanner" class="hidden space-y-4">
+      <div class="p-4 rounded-2xl glass space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-sm">📷 Shtrix-kod skaneri yoki Qidiruv</h2>
+          <button onclick="toggleCamera()" id="camBtn" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs active:scale-95 transition">
+            Kamerani yoqish
+          </button>
+        </div>
+
+        <!-- Haqiqiy Kamera oynasi -->
+        <div id="readerWrapper" class="hidden space-y-2">
+          <div id="reader" class="w-full overflow-hidden rounded-2xl border border-emerald-500/40"></div>
+          <p class="text-center text-[11px] text-emerald-400">Shtrix-kodni ramka ichiga toʻgʻrilang...</p>
+        </div>
+
+        <!-- Qidiruv inputi -->
+        <div class="relative">
+          <input
+            type="text"
+            id="scanInput"
+            oninput="searchDatabase(this.value)"
+            placeholder="Shtrix-kod, SAP-kod yoki tovar nomi..."
+            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+          />
+          <div id="searchResults" class="mt-2 space-y-1.5 max-h-56 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- Tanlangan tovarga srok kiritish formasi -->
+      <div id="addFormCard" class="p-4 rounded-2xl glass space-y-3">
+        <div class="flex justify-between items-start">
+          <div>
+            <span id="selectedSap" class="text-[11px] font-mono text-emerald-400">SAP: Tanlanmagan</span>
+            <h3 id="selectedName" class="font-bold text-base mt-0.5">Tovarni skanerlang yoki tanlang</h3>
+          </div>
+          <span id="selectedUnitBadge" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-bold text-slate-300">ШТ</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] text-slate-400">Yaroqlilik muddati (Srok)</label>
+            <input type="date" id="expDateInput" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+          <div>
+            <label id="qtyLabel" class="text-[11px] text-slate-400">Miqdori (ШТ / КГ)</label>
+            <input type="number" id="qtyInput" step="1" value="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+        </div>
+
+        <!-- Tezkor miqdor tugmalari (ШТ yoki КГ ga qarab o'zgaradi) -->
+        <div id="presetButtons" class="flex gap-1.5 flex-wrap"></div>
+
+        <div>
+          <label class="text-[11px] text-slate-400">1 dona/kg taxminiy narxi (soʻmda — foyda hisobi uchun)</label>
+          <input type="number" id="priceInput" value="25000" step="1000" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" />
+        </div>
+
+        <button onclick="saveBatch()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition">
+          ➕ Roʻyxatga qoʻshish
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 3: BAZA QIDIRUVI -->
+    <section id="tab-db" class="hidden space-y-3">
+      <div class="p-4 rounded-2xl glass space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-sm">📦 Shtrix-kodlar Bazasi</h2>
+          <button onclick="exportCleanJson()" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+            💾 baza.json yuklab olish
+          </button>
+        </div>
+        <input
+          type="text"
+          oninput="renderDbCatalog(this.value)"
+          placeholder="41,313 ta tovar ichidan qidirish..."
+          class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white"
+        />
+        <div id="dbCatalogList" class="space-y-2 max-h-[60vh] overflow-y-auto"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: "НА ЭКРАН ДОМОЙ" YO'RIQNOMASI -->
+  <div id="installModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-3xl glass p-5 space-y-4 border border-slate-700">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">📲 Ekranga ilova qilib chiqarish</h3>
+        <button onclick="closeInstallModal()" class="text-slate-400 text-lg">✕</button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-300">
+        <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+          <p class="font-bold text-white">🍏 iPhone (Safari orqali):</p>
+          <p>1. Pastdagi <b>«Поделиться» (Ulashish — tepaga qaragan strelka)</b> tugmasini bosing.</p>
+          <p>2. Roʻyxatdan <b>«На экран „Домой“» (Add to Home Screen)</b> bandini tanlang va <b>Добавить</b> bosing.</p>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+          <p class="font-bold text-white">🤖 Android (Chrome orqali):</p>
+          <p>1. Yuqori oʻng burchakdagi <b>⋮ (3 ta nuqta)</b> menyusini bosing.</p>
+          <p>2. <b>«Добавить на главный экран» (Установить приложение)</b> tugmasini bosing.</p>
+        </div>
+      </div>
+      <button id="nativeInstallBtn" onclick="triggerNativeInstall()" class="hidden w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">
+        ⚡ Avtomatik oʻrnatish
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL 2: -30% AKSIYA STIKERI -->
+  <div id="stickerModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-xs rounded-3xl bg-amber-400 text-slate-950 p-5 space-y-3 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-950/20 pb-2">
+        <span class="font-black text-xs uppercase tracking-widest bg-rose-600 text-white px-2.5 py-0.5 rounded-md">AKSIYA -30%</span>
+        <button onclick="closeStickerModal()" class="font-bold text-sm">✕</button>
+      </div>
+      <h4 id="stName" class="font-black text-base leading-snug"></h4>
+      <div class="flex justify-between items-end pt-1">
+        <div>
+          <p class="text-[11px] font-semibold opacity-75">Eski narx:</p>
+          <p id="stOldPrice" class="text-sm line-through font-bold opacity-75"></p>
+        </div>
+        <div class="text-right">
+          <p class="text-[11px] font-bold uppercase">Yangi narx:</p>
+          <p id="stNewPrice" class="text-2xl font-black text-rose-700"></p>
+        </div>
+      </div>
+      <p id="stBarcode" class="text-[11px] font-mono text-center bg-white/80 py-1 rounded-lg font-bold"></p>
+      <button onclick="window.print()" class="w-full py-2.5 rounded-xl bg-slate-950 text-white font-bold text-xs">
+        🖨️ Stikerni chop etish
+      </button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="fixed bottom-0 inset-x-0 z-30 glass px-6 py-2 flex justify-around items-center">
+    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center gap-0.5 text-emerald-400 font-bold text-[11px]">
+      <span class="text-lg">🚦</span>
+      <span>Svetofor</span>
+    </button>
+    <button onclick="switchTab('scanner')" id="nav-scanner" class="flex flex-col items-center gap-0.5 text-slate-400 font-semibold text-[11px]">
+      <span class="w-12 h-12 -mt-6 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/30 border-4 border-[#0b0f19]">
+        📷
+      </span>
+      <span>Skaner +</span>
+    </button>
+    <button onclick="switchTab('db')" id="nav-db" class="flex flex-col items-center gap-0.5 text-slate-400 font-semibold text-[11px]">
+      <span class="text-lg">📦</span>
+      <span>Baza</span>
+    </button>
+  </nav>
+
+  <script>
+    // 1. STANDART STARTER BAZA (Bar-kod.XLSX dan olingan haqiqiy namuna, baza.json yuklanguncha ishlaydi)
+    let DB = [
+      ["117030202-00189", "Стаканчик VIOLETTE Блаженство 100г", "ШТ", "4780090180603, 4780090180559", "U"],
+      ["117030202-00297", "Пирожное Violette Ассорти эклер 150г±10г", "ШТ", "4780090180443, 4780090180818", "U"],
+      ["117040304-00024", "Монэ Эклер", "ШТ", "311147140, 4780099240421, 21304514, 4780099240346", "U"],
+      ["117040304-00025", "Монэ пирожное упаковка", "ШТ", "4780099240353, 311147139, 4780099240360, 4780099240377, 311147141, 4780099240391", "U"],
+      ["117040304-00334", "Торт NOSTALGIA Наполеон фисташка 650г", "ШТ", "22419347", "U"],
+      ["160010202-00005", "Легендарный_колбасно-копч. сыр 200гр", "ШТ", "4780075910157, 4780095550036", "F"],
+      ["161000004-00020", "Сыр Легендарный твердый вакуум, вес", "КГ", "2064072", "F"],
+      ["149000031-00021", "Арбуз нарезка Из Корзинки, 500г", "ШТ", "4780153790435", "O"],
+      ["142030101-00018", "Корм Probalance для активных кошек 415г", "ШТ", "14640011982228, 4640011982221", "D"],
+      ["118010101-00001", "Колбаски ЛАЗЗАТ с сыром зам., вес", "КГ", "2080146", "S"]
+    ];
+
+    let BARCODE_MAP = new Map();
+    let currentFilterStatus = 'ALL';
+    let currentFilterCat = 'ALL';
+    let selectedProduct = null;
+    let html5QrCode = null;
+    let cameraActive = false;
+
+    // Srokdagi partiyalar va Moliya ko'rsatkichlari (LocalStorage)
+    let batches = JSON.parse(localStorage.getItem('mp_batches') || 'null') || [
+      { id: 1, sap: "117040304-00334", name: "Торт NOSTALGIA Наполеон фисташка 650г", unit: "ШТ", barcode: "22419347", cat: "U", expDate: offsetDate(1), qty: 3, price: 68000, discount: false },
+      { id: 2, sap: "160010202-00005", name: "Легендарный_колбасно-копч. сыр 200гр", unit: "ШТ", barcode: "4780075910157", cat: "F", expDate: offsetDate(4), qty: 8, price: 24000, discount: false },
+      { id: 3, sap: "161000004-00020", name: "Сыр Легендарный твердый вакуум, вес", unit: "КГ", barcode: "2064072", cat: "F", expDate: offsetDate(12), qty: 4.5, price: 95000, discount: false }
+    ];
+    let stats = JSON.parse(localStorage.getItem('mp_stats') || '{"saved": 420000, "loss": 65000}');
+
+    function offsetDate(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split('T')[0];
+    }
+
+    // 2. MULTI-BARKOD INDEKSLASH (Vergul bilan ajratilgan shtrix-kodlarni tezkor Map'ga yig'ish)
+    function indexDatabase() {
+      BARCODE_MAP.clear();
+      DB.forEach((item) => {
+        const [sap, name, unit, barcodesStr, cat] = item;
+        const bcs = String(barcodesStr).split(',').map((s) => s.trim()).filter(Boolean);
+        bcs.forEach((bc) => BARCODE_MAP.set(bc, { sap, name, unit, barcode: bc, allBarcodes: bcs, cat }));
+      });
+      document.getElementById('dbBadge').textContent = `${DB.length.toLocaleString()} tovar | ${BARCODE_MAP.size.toLocaleString()} shtrix`;
+      renderDbCatalog('');
+    }
+
+    // GitHub'dagi baza.json faylini avtomatik tortib olish
+    async function loadRemoteBaza() {
+      try {
+        const res = await fetch('./baza.json');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            DB = data;
+          }
+        }
+      } catch (e) {
+        console.log('Local starter baza ishlatilmoqda.');
+      }
+      indexDatabase();
+    }
+
+    // 3. EXCEL (Bar-kod.XLSX) YOKI JSON FAYL YUKLANGANDA O'QISH
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('dbBadge').textContent = "O'qilmoqda...";
+
+      if (file.name.endsWith('.json')) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          DB = JSON.parse(ev.target.result);
+          indexDatabase();
+          alert(`Muvaffaqiyatli! ${DB.length.toLocaleString()} ta tovar yuklandi.`);
+        };
+        reader.readAsText(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const data = new Uint8Array(ev.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet);
+          const temp = [];
+          rows.forEach((r) => {
+            const name = r['Краткий текст материала'];
+            const bc = r['Бар-код'];
+            const grp = String(r['Группа материалов'] || 'D');
+            if (name && bc && grp[0] !== 'M') {
+              temp.push([
+                String(r['Материал'] || '').trim(),
+                String(name).trim(),
+                String(r['Базовая ЕИ'] || 'ШТ').trim(),
+                String(bc).replace(/\.0$/, '').trim(),
+                grp[0]
+              ]);
+            }
+          });
+          DB = temp;
+          indexDatabase();
+          alert(`Bar-kod.XLSX to'liq o'qildi! ${DB.length.toLocaleString()} ta tovar va ${BARCODE_MAP.size.toLocaleString()} ta shtrix-kod tayyor!`);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    }
+
+    function exportCleanJson() {
+      const blob = new Blob([JSON.stringify(DB)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'baza.json';
+      a.click();
+    }
+
+    // 4. SVETOFOR DASHBOARD RENDERI
+    function daysRemaining(dateStr) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const target = new Date(dateStr);
+      target.setHours(0, 0, 0, 0);
+      return Math.round((target - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function renderDashboard() {
+      localStorage.setItem('mp_batches', JSON.stringify(batches));
+      localStorage.setItem('mp_stats', JSON.stringify(stats));
+
+      let crit = 0, warn = 0, safe = 0, riskSum = 0;
+      batches.forEach((b) => {
+        const d = daysRemaining(b.expDate);
+        if (d <= 2) { crit++; riskSum += b.qty * b.price; }
+        else if (d <= 7) { warn++; riskSum += b.qty * b.price; }
+        else safe++;
+      });
+
+      document.getElementById('count-critical').textContent = crit;
+      document.getElementById('count-warning').textContent = warn;
+      document.getElementById('count-safe').textContent = safe;
+      document.getElementById('savedMoneyText').textContent = stats.saved.toLocaleString() + " soʻm";
+      document.getElementById('riskMoneyText').textContent = Math.round(riskSum).toLocaleString() + " soʻm";
+      document.getElementById('lossMoneyText').textContent = stats.loss.toLocaleString() + " soʻm";
+
+      const listEl = document.getElementById('inventoryList');
+      const filtered = batches
+        .filter((b) => {
+          const d = daysRemaining(b.expDate);
+          if (currentFilterStatus === 'critical' && d > 2) return false;
+          if (currentFilterStatus === 'warning' && (d <= 2 || d > 7)) return false;
+          if (currentFilterStatus === 'safe' && d <= 7) return false;
+          if (currentFilterCat !== 'ALL' && b.cat !== currentFilterCat) return false;
+          return true;
+        })
+        .sort((a, b) => daysRemaining(a.expDate) - daysRemaining(b.expDate));
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="p-8 rounded-2xl glass text-center text-xs text-slate-400">Bu filtrda tovarlar yoʻq 🎉</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((b) => {
+        const d = daysRemaining(b.expDate);
+        const badgeClass = d <= 2
+          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+          : d <= 7
+          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+        const dayText = d < 0 ? `${Math.abs(d)} kun oʻtgan!` : d === 0 ? 'Bugun tugaydi!' : `${d} kun qoldi`;
+
+        return `
+          <div class="p-3.5 rounded-2xl glass space-y-2.5 border-l-4 ${d <= 2 ? 'border-l-rose-500' : d <= 7 ? 'border-l-amber-400' : 'border-l-emerald-500'}">
+            <div class="flex justify-between items-start gap-2">
+              <div>
+                <div class="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono">
+                  <span>SAP: ${b.sap}</span>
+                  <span>•</span>
+                  <span>#${b.barcode}</span>
+                  ${b.discount ? '<span class="px-1.5 py-0.2 bg-amber-400 text-slate-950 font-black rounded">-30% AKSIYA</span>' : ''}
+                </div>
+                <h4 class="font-bold text-sm text-white mt-0.5">${b.name}</h4>
+              </div>
+              <span class="px-2.5 py-1 rounded-xl text-[11px] font-bold border shrink-0 ${badgeClass}">
+                ${dayText}
+              </span>
+            </div>
+
+            <div class="flex justify-between items-center text-xs text-slate-300 bg-slate-900/70 px-3 py-2 rounded-xl">
+              <span>📦 Qoldiq: <b>${b.qty} ${b.unit}</b></span>
+              <span>📅 Srok: <b>${b.expDate}</b></span>
+              <span class="text-emerald-400 font-bold">${Math.round(b.qty * b.price).toLocaleString()} soʻm</span>
+            </div>
+
+            <div class="grid grid-cols-4 gap-1.5 pt-1">
+              <button onclick="openStickerModal(${b.id})" class="py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold active:scale-95">🏷️ -30%</button>
+              <button onclick="resolveBatch(${b.id}, 'sold')" class="py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold active:scale-95">✅ Sotildi</button>
+              <button onclick="resolveBatch(${b.id}, 'return')" class="py-1.5 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[11px] font-bold active:scale-95">↩️ Vozvrat</button>
+              <button onclick="resolveBatch(${b.id}, 'waste')" class="py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold active:scale-95">🗑️ Spisaniye</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setFilterStatus(st) {
+      currentFilterStatus = currentFilterStatus === st ? 'ALL' : st;
+      renderDashboard();
+    }
+
+    function setFilterCat(cat) {
+      currentFilterCat = cat;
+      renderDashboard();
+    }
+
+    function resolveBatch(id, action) {
+      const idx = batches.findIndex((x) => x.id === id);
+      if (idx === -1) return;
+      const b = batches[idx];
+      const val = Math.round(b.qty * b.price);
+      if (action === 'sold') stats.saved += val;
+      else stats.loss += val;
+      batches.splice(idx, 1);
+      renderDashboard();
+    }
+
+    // 5. HAQIQIY KAMERA SKANERI VA QIDIRUV
+    function toggleCamera() {
+      const wrap = document.getElementById('readerWrapper');
+      const btn = document.getElementById('camBtn');
+      if (!cameraActive) {
+        wrap.classList.remove('hidden');
+        btn.textContent = "Kamerani o'chirish";
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 120 } },
+          (decodedText) => {
+            document.getElementById('scanInput').value = decodedText;
+            searchDatabase(decodedText);
+            if (navigator.vibrate) navigator.vibrate(100);
+          },
+          () => {}
+        ).catch(() => {
+          alert("Kameraga ruxsat berilmadi yoki HTTPS/GitHub Pages orqali oching.");
+        });
+        cameraActive = true;
+      } else {
+        if (html5QrCode) html5QrCode.stop().then(() => html5QrCode.clear());
+        wrap.classList.add('hidden');
+        btn.textContent = "Kamerani yoqish";
+        cameraActive = false;
+      }
+    }
+
+    function searchDatabase(query) {
+      const q = query.trim().toLowerCase();
+      const box = document.getElementById('searchResults');
+      if (!q) { box.innerHTML = ''; return; }
+
+      // To'g'ridan-to'g'ri shtrix-kod bo'yicha 0.01 soniyada topish
+      if (BARCODE_MAP.has(q)) {
+        selectProductForForm(BARCODE_MAP.get(q));
+      }
+
+      const matches = [];
+      for (const item of DB) {
+        const [sap, name, unit, bcs, cat] = item;
+        if (sap.toLowerCase().includes(q) || name.toLowerCase().includes(q) || bcs.includes(q)) {
+          matches.push({ sap, name, unit, barcode: bcs.split(',')[0].trim(), cat });
+          if (matches.length >= 12) break;
+        }
+      }
+
+      box.innerHTML = matches.map((m) => `
+        <div onclick='selectProductForForm(${JSON.stringify(m)})' class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 flex justify-between items-center cursor-pointer">
+          <div>
+            <p class="text-xs font-bold text-white">${m.name}</p>
+            <p class="text-[10px] text-slate-400 font-mono">SAP: ${m.sap} | Barkod: ${m.barcode}</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">${m.unit}</span>
+        </div>
+      `).join('');
+    }
+
+    function selectProductForForm(prod) {
+      selectedProduct = prod;
+      document.getElementById('selectedSap').textContent = `SAP: ${prod.sap} • #${prod.barcode}`;
+      document.getElementById('selectedName').textContent = prod.name;
+      document.getElementById('selectedUnitBadge').textContent = prod.unit;
+
+      const qtyInput = document.getElementById('qtyInput');
+      const presetBox = document.getElementById('presetButtons');
+
+      if (prod.unit === 'КГ') {
+        qtyInput.step = "0.05";
+        qtyInput.value = "0.5";
+        presetBox.innerHTML = [0.25, 0.5, 1.0, 2.5, 5.0].map((v) =>
+          `<button onclick="document.getElementById('qtyInput').value=${v}" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-bold text-emerald-300 border border-slate-700">+${v} kg</button>`
+        ).join('');
+      } else {
+        qtyInput.step = "1";
+        qtyInput.value = "1";
+        presetBox.innerHTML = [1, 2, 5, 10, 12, 24].map((v) =>
+          `<button onclick="document.getElementById('qtyInput').value=${v}" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-bold text-emerald-300 border border-slate-700">${v} dona</button>`
+        ).join('');
+      }
+    }
+
+    function saveBatch() {
+      if (!selectedProduct) {
+        alert("Avval shtrix-kodni skanerlang yoki qidiruvdan tovarni tanlang!");
+        return;
+      }
+      const expDate = document.getElementById('expDateInput').value;
+      const qty = parseFloat(document.getElementById('qtyInput').value) || 1;
+      const price = parseFloat(document.getElementById('priceInput').value) || 15000;
+
+      batches.unshift({
+        id: Date.now(),
+        sap: selectedProduct.sap,
+        name: selectedProduct.name,
+        unit: selectedProduct.unit,
+        barcode: selectedProduct.barcode,
+        cat: selectedProduct.cat || 'U',
+        expDate,
+        qty,
+        price,
+        discount: false
+      });
+
+      switchTab('dashboard');
+      renderDashboard();
+    }
+
+    // 6. AKSIYA STIKERI VA KATALOG
+    function openStickerModal(id) {
+      const b = batches.find((x) => x.id === id);
+      if (!b) return;
+      b.discount = true;
+      document.getElementById('stName').textContent = b.name;
+      document.getElementById('stOldPrice').textContent = b.price.toLocaleString() + " soʻm";
+      document.getElementById('stNewPrice').textContent = Math.round(b.price * 0.7).toLocaleString() + " soʻm";
+      document.getElementById('stBarcode').textContent = `SAP: ${b.sap} | ${b.barcode}`;
+      document.getElementById('stickerModal').classList.remove('hidden');
+      renderDashboard();
+    }
+
+    function closeStickerModal() {
+      document.getElementById('stickerModal').classList.add('hidden');
+    }
+
+    function renderDbCatalog(q) {
+      const query = q.trim().toLowerCase();
+      const box = document.getElementById('dbCatalogList');
+      const slice = DB.filter(([sap, name, unit, bcs]) =>
+        !query || sap.toLowerCase().includes(query) || name.toLowerCase().includes(query) || bcs.includes(query)
+      ).slice(0, 30);
+
+      box.innerHTML = slice.map(([sap, name, unit, bcs, cat]) => `
+        <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex justify-between items-center text-xs">
+          <div>
+            <p class="font-bold text-white">${name}</p>
+            <p class="text-[10px] text-slate-400 font-mono">SAP: ${sap} | Barkod: ${bcs}</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-bold">${unit}</span>
+        </div>
+      `).join('');
+    }
+
+    // 7. NAVIGATSIYA VA PWA "НА ЭКРАН ДОМОЙ"
+    function switchTab(tab) {
+      ['dashboard', 'scanner', 'db'].forEach((t) => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+        const nav = document.getElementById(`nav-${t}`);
+        if (nav) nav.className = t === tab
+          ? 'flex flex-col items-center gap-0.5 text-emerald-400 font-bold text-[11px]'
+          : 'flex flex-col items-center gap-0.5 text-slate-400 font-semibold text-[11px]';
+      });
+    }
+
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('nativeInstallBtn').classList.remove('hidden');
+    });
+
+    function openInstallModal() {
+      document.getElementById('installModal').classList.remove('hidden');
+    }
+    function closeInstallModal() {
+      document.getElementById('installModal').classList.add('hidden');
+    }
+    async function triggerNativeInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        closeInstallModal();
+      }
+    }
+
+    // Boshlang'ich ishga tushirish
+    document.getElementById('expDateInput').value = offsetDate(3);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+    loadRemoteBaza();
+    renderDashboard();
+  </script>
+</body>
+</html>
