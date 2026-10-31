@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Shelfy Pro — Srok Nazorati</title>
+  <title>MuddatPro by: Valiyev</title>
 
   <!-- PWA & iOS "На экран Домой" Meta teglari -->
   <link rel="manifest" href="./manifest.json" />
@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="MuddatPro" />
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10609/10609328.png" />
 
-  <!-- Tailwind CSS, Shtrix-kod Skaneri va SheetJS -->
+  <!-- Tailwind CSS, Shtrix-kod Skaneri va SheetJS (Excel import/export) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -23,7 +23,6 @@
       --green-main: #388e3c;
       --green-accent: #4caf50;
       --bg-dark: #121212;
-      --row-dark: #181818;
       --border-dark: #262626;
     }
     body {
@@ -32,7 +31,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent;
       padding-top: env(safe-area-inset-top);
-      padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+      padding-bottom: calc(5.8rem + env(safe-area-inset-bottom));
       margin: 0;
       user-select: none;
     }
@@ -48,14 +47,14 @@
       background-color: #222222;
     }
     .bottom-pill {
-      background: rgba(38, 38, 38, 0.94);
-      backdrop-filter: blur(16px);
+      background: rgba(34, 34, 34, 0.96);
+      backdrop-filter: blur(18px);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 9999px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     }
     .nav-item-active {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.14);
       border-radius: 9999px;
       color: #ffffff;
     }
@@ -68,25 +67,40 @@
 </head>
 <body class="min-h-screen">
 
-  <!-- YUQORI YASHIL HEADER -->
+  <!-- YUQORI YASHIL HEADER (Har doim "MuddatPro by: Valiyev") -->
   <header class="sticky top-0 z-30 header-green px-4 h-14 flex items-center justify-between shadow-md">
     <button id="backBtn" onclick="closeDepartmentFilter()" class="hidden w-9 h-9 rounded-full bg-black/15 flex items-center justify-center text-white text-xl font-light active:scale-95">
       ‹
     </button>
     <div id="headerSpacer" class="w-9"></div>
 
-    <h1 id="headerTitle" onclick="secretHeaderTap()" class="font-semibold text-[17px] text-white tracking-wide truncate text-center flex-1">
-      K150_CHIRCHIQ O'RMON
+    <h1 id="headerTitle" class="font-bold text-[17px] text-white tracking-wide truncate text-center flex-1">
+      MuddatPro by: Valiyev
     </h1>
 
-    <button onclick="openTopMenu()" class="w-9 h-9 rounded-full bg-black/15 border border-white/20 flex items-center justify-center text-white active:scale-95">
+    <button onclick="toggleQuickTopMenu()" class="w-9 h-9 rounded-full bg-black/15 border border-white/20 flex items-center justify-center text-white active:scale-95">
       ⋮
     </button>
-    <!-- Yashirin Excel/JSON Baza yuklagich -->
     <input type="file" id="secretFileInput" accept=".xlsx,.xls,.json" class="hidden" onchange="handleSecretUpload(event)" />
   </header>
 
-  <!-- SUB-TABS: "Bo'limlar" | "Barcha muddatlar" (Variantlar bo'limida yashiriladi) -->
+  <!-- 3 NUQTA BOSILGANDA CHIQUVCHI TEZKOR MENYU (Hech qanday CHIRCHIQ O'RMON yo'q) -->
+  <div id="quickTopMenu" class="fixed top-14 right-4 z-40 hidden w-56 rounded-2xl bg-[#1f1f1f] border border-[#333] shadow-2xl overflow-hidden divide-y divide-[#2c2c2c] text-sm">
+    <button onclick="sortItemsMode('urgent'); toggleQuickTopMenu();" class="w-full px-4 py-3 text-left text-white hover:bg-[#2a2a2a] flex items-center gap-2.5">
+      <span>🔴</span> <span>Avval muddati yaqinlar</span>
+    </button>
+    <button onclick="sortItemsMode('name'); toggleQuickTopMenu();" class="w-full px-4 py-3 text-left text-white hover:bg-[#2a2a2a] flex items-center gap-2.5">
+      <span>🔤</span> <span>Alifbo bo‘yicha saralash</span>
+    </button>
+    <button onclick="openCalcModal(); toggleQuickTopMenu();" class="w-full px-4 py-3 text-left text-white hover:bg-[#2a2a2a] flex items-center gap-2.5">
+      <span>🗓️</span> <span>Muddat kalkulyatori</span>
+    </button>
+    <button onclick="openContactModal(); toggleQuickTopMenu();" class="w-full px-4 py-3 text-left text-[#81c784] font-medium hover:bg-[#2a2a2a] flex items-center gap-2.5">
+      <span>📞</span> <span>Aloqa uchun</span>
+    </button>
+  </div>
+
+  <!-- SUB-TABS: "Bo'limlar" | "Barcha muddatlar" -->
   <div id="subTabsBar" class="sticky top-14 z-20 bg-[#161616] grid grid-cols-2 border-b border-[#262626]">
     <button onclick="setSubTab('depts')" id="subtab-depts" class="py-3.5 text-[15px] font-medium text-white border-b-2 border-[#4caf50] transition">
       Bo‘limlar
@@ -96,59 +110,78 @@
     </button>
   </div>
 
-  <!-- ASOSIY KONTENT (Ro'yxatlar) -->
+  <!-- ASOSIY KONTENT -->
   <main id="mainContent" class="max-w-lg mx-auto">
     <!-- 1. Bo'limlar (Отдел) ro'yxati -->
     <div id="deptsContainer" class="divide-y divide-[#262626]"></div>
 
-    <!-- 2. Tovarlar (Muddatlar) ro'yxati -->
+    <!-- 2. Barcha muddatlar (Tovarlar) ro'yxati -->
     <div id="itemsContainer" class="hidden divide-y divide-[#262626]"></div>
 
-    <!-- 3. Variantlar (Profil va Sozlamalar sahifasi) -->
+    <!-- 3. Variantlar bo'limi -->
     <div id="optionsContainer" class="hidden">
-      <!-- Foydalanuvchi bloki -->
-      <div class="p-4 border-b border-[#262626] space-y-3">
+      <div class="p-4 border-b border-[#262626] space-y-2 bg-[#161616]">
         <div class="flex items-center gap-4">
-          <div class="w-14 h-14 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-800">
-            <svg class="w-9 h-9" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"/>
-            </svg>
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4caf50] to-[#2e7d32] flex items-center justify-center text-white font-black text-2xl shadow-lg">
+            V
           </div>
           <div>
-            <p id="profileName" class="text-[17px] font-medium text-white">Valiyev Yorqinbek</p>
-            <p id="profileId" class="text-[15px] text-neutral-300 mt-0.5">35601 (ID: 325062)</p>
+            <p class="text-[17px] font-bold text-white">MuddatPro by: Valiyev</p>
+            <p class="text-[13px] text-[#81c784] mt-0.5">Aqlli srok va narxnoma tizimi • v3.0 Pro</p>
           </div>
         </div>
-        <p id="profileStore" class="text-[14px] text-neutral-200 uppercase tracking-wide pt-1">K150_CHIRCHIQ O'RMON</p>
       </div>
 
-      <!-- Menyu qatorlari -->
       <div class="divide-y divide-[#262626] text-[16px]">
-        <button onclick="openMyActionsModal()" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
-          <span class="text-xl">🕒</span>
-          <span>Mening amallarim</span>
+        <button onclick="openContactModal()" class="w-full px-4 py-4 flex items-center justify-between text-left active:bg-[#1f1f1f]">
+          <div class="flex items-center gap-4">
+            <span class="text-xl">📞</span>
+            <span class="font-medium text-[#81c784]">Aloqa uchun</span>
+          </div>
+          <span class="text-neutral-500">›</span>
         </button>
-        <button onclick="openCalcModal()" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
-          <span class="text-xl">🗓️</span>
-          <span>Kalkulyator</span>
+
+        <button onclick="openMyActionsModal()" class="w-full px-4 py-4 flex items-center justify-between text-left active:bg-[#1f1f1f]">
+          <div class="flex items-center gap-4">
+            <span class="text-xl">📊</span>
+            <span>Mening amallarim</span>
+          </div>
+          <span class="text-neutral-500">›</span>
         </button>
-        <button onclick="openSettingsModal()" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
-          <span class="text-xl">⚙️</span>
-          <span>Sozlamalar</span>
+
+        <button onclick="openCalcModal()" class="w-full px-4 py-4 flex items-center justify-between text-left active:bg-[#1f1f1f]">
+          <div class="flex items-center gap-4">
+            <span class="text-xl">🗓️</span>
+            <span>Kalkulyator</span>
+          </div>
+          <span class="text-neutral-500">›</span>
         </button>
-        <button onclick="openInstallModal()" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
-          <span class="text-xl">📲</span>
-          <span>Ekranga o‘rnatish (На экран Домой)</span>
+
+        <button onclick="openInstallModal()" class="w-full px-4 py-4 flex items-center justify-between text-left active:bg-[#1f1f1f]">
+          <div class="flex items-center gap-4">
+            <span class="text-xl">📲</span>
+            <span>Ekranga o‘rnatish (На экран Домой)</span>
+          </div>
+          <span class="text-neutral-500">›</span>
         </button>
-        <button onclick="alert('Ilova versiyasi: 2.4.0 Pro\nIchki shtrix-kod bazasi faol.')" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
-          <span class="text-xl">ℹ️</span>
-          <span>Ilova haqida</span>
+
+        <button onclick="alert('MuddatPro by: Valiyev\nAsoschi: Valiyev Yorqinbek\nVersiya: 3.0 Professional')" class="w-full px-4 py-4 flex items-center justify-between text-left active:bg-[#1f1f1f]">
+          <div class="flex items-center gap-4">
+            <span class="text-xl">ℹ️</span>
+            <span>Ilova haqida</span>
+          </div>
+          <span class="text-neutral-500">›</span>
         </button>
+
         <button onclick="clearExpiredHistory()" class="w-full px-4 py-4 flex items-center gap-4 text-left text-rose-400 active:bg-[#1f1f1f]">
-          <span class="text-xl">🚪</span>
-          <span>Chiqish / Ro‘yxatni tozalash</span>
+          <span class="text-xl">🗑️</span>
+          <span>Barcha ro‘yxatni tozalash</span>
         </button>
       </div>
+
+      <p class="text-center text-[11px] text-neutral-600 mt-6 px-4">
+        🔒 Rahbar Admin Paneliga kirish uchun pastdagi «Variantlar» tugmasini ketma-ket 5 marta bosing.
+      </p>
     </div>
   </main>
 
@@ -157,7 +190,7 @@
     +
   </button>
 
-  <!-- PASTKI 5 TA TUGMALI KAPSULA NAVIGATSIYA (Skrinshot bilan 1-ga-1) -->
+  <!-- PASTKI 5 TA TUGMALI KAPSULA NAVIGATSIYA -->
   <div class="fixed bottom-3 inset-x-3 z-30 max-w-lg mx-auto bottom-pill px-2 py-1.5 grid grid-cols-5 items-center text-center">
     <button onclick="switchMainTab('home')" id="bnav-home" class="nav-item-active py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-white">
       <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -166,7 +199,7 @@
 
     <button onclick="switchMainTab('markdown')" id="bnav-markdown" class="py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-300">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10m-2.5-7.5c0-1.1 1.1-2 2.5-2s2.5.9 2.5 2c0 2-5 1.5-5 4 0 1.1 1.1 2 2.5 2s2.5-.9 2.5-2"/></svg>
-      <span class="text-[10px] leading-tight truncate w-full">Narxini tushirish uchun</span>
+      <span class="text-[10px] leading-tight truncate w-full">Narxini tushirish</span>
     </button>
 
     <button onclick="switchMainTab('rejected')" id="bnav-rejected" class="py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-300">
@@ -176,20 +209,290 @@
 
     <button onclick="switchMainTab('remove')" id="bnav-remove" class="py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-300">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 4h-4v12l-3-3m3 3l3-3"/></svg>
-      <span class="text-[10px] leading-tight truncate w-full">Olib tashlash uchun</span>
+      <span class="text-[10px] leading-tight truncate w-full">Olib tashlash</span>
     </button>
 
-    <button onclick="switchMainTab('options')" id="bnav-options" class="py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-300">
+    <!-- Variantlar tugmasi: 5 marta bosilsa Admin Panel parol oynasini ochadi! -->
+    <button onclick="handleOptionsTabClick()" id="bnav-options" class="py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-300">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       <span class="text-[10px] leading-tight truncate w-full">Variantlar</span>
     </button>
   </div>
 
   <!-- ========================================================= -->
-  <!-- TO'LIQ EKRAN 1: "MUDDATNI QO'SHISH" (10-rasmga 100% mos) -->
+  <!-- MODAL 1: TOVAR USTIGA YOKI SROGIGA BOSGANDA "O'CHIRISH / AMALLAR" KATALOGI -->
+  <!-- ========================================================= -->
+  <div id="itemActionSheet" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-[#1c1c1c] border-t sm:border border-[#333] p-5 space-y-3 shadow-2xl">
+      <div class="flex justify-between items-start gap-3 border-b border-[#2c2c2c] pb-3">
+        <div>
+          <p id="sheetItemDept" class="text-xs text-[#81c784] font-semibold"></p>
+          <h3 id="sheetItemName" class="text-base font-bold text-white mt-0.5"></h3>
+          <p id="sheetItemMeta" class="text-xs text-neutral-400 font-mono mt-0.5"></p>
+        </div>
+        <button onclick="closeItemActionSheet()" class="w-8 h-8 rounded-full bg-[#2a2a2a] text-neutral-300 flex items-center justify-center">✕</button>
+      </div>
+
+      <div class="space-y-2 pt-1 text-sm font-medium">
+        <button onclick="triggerDiscountFromSheet()" class="w-full py-3 px-4 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center justify-between active:scale-[0.99]">
+          <span>🏷️ Chegirma berish va Super Narxnoma (20%–80%)</span>
+          <span>›</span>
+        </button>
+
+        <button onclick="archiveItemAction('sold')" class="w-full py-3 px-4 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center justify-between active:scale-[0.99]">
+          <span>✅ Sotilib ketdi (Foydaga yozish)</span>
+          <span>›</span>
+        </button>
+
+        <button onclick="archiveItemAction('vozvrat')" class="w-full py-3 px-4 rounded-xl bg-sky-500/15 text-sky-300 border border-sky-500/30 flex items-center justify-between active:scale-[0.99]">
+          <span>↩️ Vozvrat (Postavshikka qaytarildi)</span>
+          <span>›</span>
+        </button>
+
+        <button onclick="archiveItemAction('spisaniye')" class="w-full py-3 px-4 rounded-xl bg-orange-500/15 text-orange-300 border border-orange-500/30 flex items-center justify-between active:scale-[0.99]">
+          <span>📉 Spisaniye (Hisobdan chiqarish)</span>
+          <span>›</span>
+        </button>
+
+        <button onclick="confirmRealDeleteItem()" class="w-full py-3.5 px-4 rounded-xl bg-rose-600 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 active:scale-[0.99]">
+          <span>🗑️ Ro‘yxatdan butunlay o‘chirish</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 2: 20%–80% CHEGIRMA VA REAL VAQTDAGI SUPER NARXNOMA GENERATORI -->
+  <!-- ========================================================= -->
+  <div id="discountModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="w-full max-w-md rounded-3xl bg-[#1a1a1a] border border-[#333] p-5 space-y-4 my-auto">
+      <div class="flex justify-between items-center border-b border-[#2c2c2c] pb-3">
+        <div>
+          <h3 class="font-bold text-base text-white">🏷️ Arzonlashtirish va Super Narxnoma</h3>
+          <p class="text-xs text-neutral-400">Chegirma foizini tanlang (20% dan 80% gacha)</p>
+        </div>
+        <button onclick="closeDiscountModal()" class="w-8 h-8 rounded-full bg-[#2a2a2a] text-neutral-300">✕</button>
+      </div>
+
+      <!-- Asl narxni kiritish -->
+      <div>
+        <label class="text-xs text-neutral-400">Mahsulotning 1 dona/kg asl narxi (so‘mda):</label>
+        <input
+          type="number"
+          id="discBasePriceInput"
+          value="25000"
+          step="500"
+          oninput="renderSuperPriceTagCanvas()"
+          class="w-full mt-1 bg-[#111] border border-[#3a3a3a] rounded-xl px-3.5 py-2 text-base font-bold text-white focus:outline-none focus:border-[#4caf50]"
+        />
+      </div>
+
+      <!-- 20% 30% 40% 50% 60% 70% 80% tugmalari -->
+      <div>
+        <label class="text-xs text-neutral-400">Chegirma foizini tanlang:</label>
+        <div class="grid grid-cols-7 gap-1.5 mt-1.5" id="percentButtonsGrid">
+          <button onclick="selectDiscountPercent(20)" data-pct="20" class="pct-btn py-2 rounded-xl bg-[#262626] text-white text-xs font-bold border border-[#3a3a3a]">20%</button>
+          <button onclick="selectDiscountPercent(30)" data-pct="30" class="pct-btn py-2 rounded-xl bg-amber-400 text-black text-xs font-black border border-amber-300">30%</button>
+          <button onclick="selectDiscountPercent(40)" data-pct="40" class="pct-btn py-2 rounded-xl bg-[#262626] text-white text-xs font-bold border border-[#3a3a3a]">40%</button>
+          <button onclick="selectDiscountPercent(50)" data-pct="50" class="pct-btn py-2 rounded-xl bg-[#262626] text-white text-xs font-bold border border-[#3a3a3a]">50%</button>
+          <button onclick="selectDiscountPercent(60)" data-pct="60" class="pct-btn py-2 rounded-xl bg-[#262626] text-white text-xs font-bold border border-[#3a3a3a]">60%</button>
+          <button onclick="selectDiscountPercent(70)" data-pct="70" class="pct-btn py-2 rounded-xl bg-[#262626] text-white text-xs font-bold border border-[#3a3a3a]">70%</button>
+          <button onclick="selectDiscountPercent(80)" data-pct="80" class="pct-btn py-2 rounded-xl bg-[#262626] text-white text-xs font-bold border border-[#3a3a3a]">80%</button>
+        </div>
+      </div>
+
+      <!-- REAL VAQTDAGI CANVAS SUPER NARXNOMA -->
+      <div class="bg-[#111] p-2.5 rounded-2xl border border-[#2c2c2c] flex flex-col items-center">
+        <canvas id="priceTagCanvas" width="600" height="380" class="w-full rounded-xl shadow-lg"></canvas>
+      </div>
+
+      <!-- Saqlab olish va tasdiqlash tugmalari -->
+      <div class="grid grid-cols-1 gap-2 pt-1">
+        <button onclick="downloadPriceTagImage()" class="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
+          <span>💾 Narxnomani rasm (.PNG) qilib saqlab olish</span>
+        </button>
+        <button onclick="applyDiscountAndClose()" class="w-full py-3 rounded-xl bg-[#4caf50] text-white font-bold text-sm active:scale-95 transition">
+          ✅ «Narxini tushirish» bo‘limiga o‘tkazish
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 3: "ALOQA UCHUN" BO'LIMI (Real qo'ng'iroq, Telegram, Instagram) -->
+  <!-- ========================================================= -->
+  <div id="contactModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-3xl bg-[#1b1b1b] border border-[#333] p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-[#2c2c2c] pb-3">
+        <h3 class="font-bold text-base text-white">📞 Aloqa uchun</h3>
+        <button onclick="closeContactModal()" class="w-8 h-8 rounded-full bg-[#2a2a2a] text-neutral-300">✕</button>
+      </div>
+
+      <!-- Yuqori qismdagi rasmiy matn -->
+      <div class="p-3.5 rounded-2xl bg-[#142416] border border-[#4caf50]/30 text-xs text-neutral-200 leading-relaxed">
+        Dastur asoschisi <b class="text-white">Valiyev Yorqinbek</b> hisoblanadi. Dastur boʻyicha murojaat, shikoyat, talab va takliflarni quyidagi manzillarga yuboring:
+      </div>
+
+      <!-- 4 ta real ishlovchi aloqa tugmasi -->
+      <div class="space-y-2.5 text-sm font-semibold">
+        <a href="tel:+998950346996" class="w-full py-3.5 px-4 rounded-2xl bg-[#253927] hover:bg-[#2e4730] text-[#81c784] border border-[#4caf50]/40 flex items-center justify-between active:scale-95 transition">
+          <span class="flex items-center gap-2.5">📞 <span>Asosiy raqam:</span></span>
+          <span class="font-mono text-white">+998 95 034 69 96</span>
+        </a>
+
+        <a href="tel:+998935039877" class="w-full py-3.5 px-4 rounded-2xl bg-[#222] hover:bg-[#2a2a2a] text-emerald-300 border border-[#383838] flex items-center justify-between active:scale-95 transition">
+          <span class="flex items-center gap-2.5">📲 <span>Qo‘shimcha raqam:</span></span>
+          <span class="font-mono text-white">+998 93 503 98 77</span>
+        </a>
+
+        <a href="https://t.me/Valiyev20" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 px-4 rounded-2xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 flex items-center justify-between active:scale-95 transition">
+          <span class="flex items-center gap-2.5">✈️ <span>Telegram manzil:</span></span>
+          <span class="font-mono text-white">@Valiyev20</span>
+        </a>
+
+        <a href="https://instagram.com/artickle_uz" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 px-4 rounded-2xl bg-pink-500/15 hover:bg-pink-500/25 text-pink-300 border border-pink-500/30 flex items-center justify-between active:scale-95 transition">
+          <span class="flex items-center gap-2.5">📸 <span>Instagram manzil:</span></span>
+          <span class="font-mono text-white">@artickle_uz</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 4: ADMIN PANEL PAROL KIRITISH OYNASI (Parol: Valiyev20) -->
+  <!-- ========================================================= -->
+  <div id="adminLoginModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-xs rounded-3xl bg-[#1c1c1c] border border-[#333] p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base text-white">🔐 Admin Panelga kirish</h3>
+        <button onclick="closeAdminLoginModal()" class="text-neutral-400">✕</button>
+      </div>
+      <p class="text-xs text-neutral-400">Do‘kon rahbari va boshqaruvchi maxsus parolini kiriting:</p>
+      <input
+        type="password"
+        id="adminPwdInput"
+        placeholder="Parolni kiriting..."
+        class="w-full bg-[#111] border border-[#383838] rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-[#4caf50]"
+      />
+      <button onclick="verifyAdminPassword()" class="w-full py-3 rounded-xl bg-[#4caf50] text-white font-bold text-sm active:scale-95 transition">
+        Kirish
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- TO'LIQ EKRAN 3: PROFESSIONAL RAHBAR ADMIN PANELI -->
+  <!-- ========================================================= -->
+  <div id="adminPanelScreen" class="fixed inset-0 z-50 hidden bg-[#0d1015] flex flex-col overflow-y-auto">
+    <!-- Admin Header -->
+    <div class="sticky top-0 z-20 bg-[#142618] border-b border-[#4caf50]/30 px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2.5 py-1 rounded-lg bg-[#4caf50] text-black font-black text-xs">PRO ADMIN</span>
+        <h2 class="font-bold text-sm sm:text-base text-white">Rahbar Boshqaruv va Tahlil Markazi</h2>
+      </div>
+      <button onclick="closeAdminPanel()" class="px-3 py-1.5 rounded-xl bg-white/10 text-white text-xs font-semibold">
+        Yopish ✕
+      </button>
+    </div>
+
+    <div class="max-w-lg mx-auto w-full p-4 space-y-4 pb-16">
+      <!-- 1. Moliya va Saqlab qolingan foyda kartasi -->
+      <div class="p-4 rounded-2xl bg-gradient-to-br from-[#16291a] via-[#131b24] to-[#11151c] border border-[#4caf50]/30 shadow-xl space-y-3">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-[11px] uppercase tracking-wider text-[#81c784] font-bold">💰 Do‘kon umumiy srok balansi</p>
+            <h3 id="admTotalValue" class="text-2xl font-black text-white mt-0.5">0 so‘m</h3>
+          </div>
+          <button onclick="exportComprehensiveExcelReport()" class="px-3 py-2 rounded-xl bg-[#4caf50] text-black font-black text-xs shadow-lg active:scale-95 transition flex items-center gap-1.5">
+            <span>📊 Excel (.XLSX) Hisobot</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/10 text-xs">
+          <div class="p-2 rounded-xl bg-black/30">
+            <span class="text-neutral-400 text-[10px]">✅ Sotilgan (Foyda):</span>
+            <p id="admSoldSum" class="font-bold text-emerald-400 mt-0.5">0 so‘m</p>
+          </div>
+          <div class="p-2 rounded-xl bg-black/30">
+            <span class="text-neutral-400 text-[10px]">↩️ Vozvrat (Qaytdi):</span>
+            <p id="admVozvratSum" class="font-bold text-sky-400 mt-0.5">0 so‘m</p>
+          </div>
+          <div class="p-2 rounded-xl bg-black/30">
+            <span class="text-neutral-400 text-[10px]">🗑️ Spisaniye (Zarar):</span>
+            <p id="admSpisaniyeSum" class="font-bold text-rose-400 mt-0.5">0 so‘m</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Svetofor Real Vaqt Statistikasi (6 ta Karta) -->
+      <div class="grid grid-cols-3 gap-2.5 text-left">
+        <div class="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30">
+          <span class="text-[10px] font-bold text-rose-400 uppercase">🔴 Kritik / O‘tgan</span>
+          <p id="admCritCount" class="text-2xl font-black text-white mt-1">0</p>
+          <p class="text-[11px] text-rose-300/80">0–2 kun qolgan</p>
+        </div>
+        <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+          <span class="text-[10px] font-bold text-amber-300 uppercase">🟡 Aksiya / Sariq</span>
+          <p id="admWarnCount" class="text-2xl font-black text-white mt-1">0</p>
+          <p class="text-[11px] text-amber-200/80">3–7 kun / Chegirma</p>
+        </div>
+        <div class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+          <span class="text-[10px] font-bold text-emerald-300 uppercase">🟢 Xavfsiz</span>
+          <p id="admSafeCount" class="text-2xl font-black text-white mt-1">0</p>
+          <p class="text-[11px] text-emerald-200/80">8+ kun qolgan</p>
+        </div>
+      </div>
+
+      <!-- 3. Real vaqtdagi Vizual Infografika (Svetofor ulushi + Bo'limlar) -->
+      <div class="p-4 rounded-2xl bg-[#151921] border border-white/10 space-y-3">
+        <h4 class="font-bold text-xs uppercase tracking-wider text-neutral-300">📈 Real vaqtdagi Svetofor Infografikasi</h4>
+        <div id="admTrafficBar" class="w-full h-4 rounded-full bg-[#222] overflow-hidden flex">
+          <div id="barCrit" class="bg-rose-500 h-full transition-all" style="width: 33%"></div>
+          <div id="barWarn" class="bg-amber-400 h-full transition-all" style="width: 33%"></div>
+          <div id="barSafe" class="bg-emerald-500 h-full transition-all" style="width: 34%"></div>
+        </div>
+        <div class="flex justify-between text-[11px] text-neutral-400">
+          <span id="pctCritTxt">🔴 Kritik: 0%</span>
+          <span id="pctWarnTxt">🟡 Sariq: 0%</span>
+          <span id="pctSafeTxt">🟢 Yaxshi: 0%</span>
+        </div>
+
+        <div class="pt-3 border-t border-white/10 space-y-2">
+          <h5 class="text-xs font-bold text-neutral-300">Bo‘limlar (Отдел) kesimida eng ko‘p srokdagi tovarlar:</h5>
+          <div id="admDeptBreakdown" class="space-y-1.5 text-xs"></div>
+        </div>
+      </div>
+
+      <!-- 4. Arxiv Журнали (Spisaniye, Vozvrat, Sotilganlar tarixi) -->
+      <div class="p-4 rounded-2xl bg-[#151921] border border-white/10 space-y-3">
+        <div class="flex justify-between items-center">
+          <h4 class="font-bold text-xs uppercase tracking-wider text-neutral-300">📋 Spisaniye, Vozvrat va Sotuv Jurnali</h4>
+          <span id="admArchiveCount" class="text-[11px] text-[#81c784] font-semibold">0 ta amal</span>
+        </div>
+        <div id="admArchiveList" class="space-y-2 max-h-60 overflow-y-auto divide-y divide-white/5"></div>
+      </div>
+
+      <!-- 5. Baza va Xavfsizlik Boshqaruvi -->
+      <div class="p-4 rounded-2xl bg-[#151921] border border-white/10 space-y-3">
+        <h4 class="font-bold text-xs uppercase tracking-wider text-neutral-300">🗄️ Shtrix-kod Baza va Admin Sozlamalari</h4>
+        <p id="admDbInfo" class="text-xs text-neutral-400">Ichki yashirin baza: Yuklangan</p>
+
+        <button onclick="document.getElementById('secretFileInput').click()" class="w-full py-3 rounded-xl bg-[#253927] text-[#81c784] border border-[#4caf50]/40 font-bold text-xs active:scale-95 transition">
+          📥 Ichki Bar-kod.XLSX bazasini yangilash
+        </button>
+
+        <div class="pt-2 border-t border-white/10 flex gap-2">
+          <input type="text" id="newAdminPwd" placeholder="Yangi admin paroli (hozir: Valiyev20)" class="flex-1 bg-black/40 border border-white/15 rounded-xl px-3 py-2 text-xs text-white" />
+          <button onclick="changeAdminPassword()" class="px-4 py-2 rounded-xl bg-white/10 text-white text-xs font-bold">Saqlash</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- TO'LIQ EKRAN 1: "MUDDATNI QO'SHISH" -->
   <!-- ========================================================= -->
   <div id="addScreen" class="fixed inset-0 z-40 hidden bg-[#121212] flex flex-col">
-    <!-- Yashil Header -->
     <div class="header-green px-4 h-14 flex items-center justify-between">
       <button onclick="closeAddScreen()" class="w-9 h-9 rounded-full bg-black/15 border border-white/20 flex items-center justify-center text-white text-xl">
         ‹
@@ -199,7 +502,6 @@
     </div>
 
     <div class="p-4 space-y-5 flex-1 overflow-y-auto max-w-lg mx-auto w-full">
-      <!-- Nom yoki SAP + Skaner ikonkasi -->
       <div>
         <div class="flex items-center gap-3">
           <input
@@ -217,10 +519,8 @@
           </button>
         </div>
 
-        <!-- Qidiruv natijasi (Faqat kod kiritilganda chiqadi) -->
         <div id="lookupDropdown" class="mt-1 divide-y divide-[#2a2a2a] bg-[#1a1a1a] rounded-md overflow-hidden"></div>
 
-        <!-- Tanlangan tovar ma'lumoti -->
         <div id="selectedProductBox" class="hidden mt-3 p-3 rounded-lg bg-[#1b2e1e] border border-[#4caf50]/40">
           <p id="selProdName" class="text-[15px] font-semibold text-white"></p>
           <div class="flex justify-between items-center text-xs text-neutral-300 mt-1">
@@ -230,7 +530,6 @@
         </div>
       </div>
 
-      <!-- Radio tugmalar -->
       <div class="space-y-3">
         <label class="flex items-center gap-3 cursor-pointer" onclick="setExpMode('useby')">
           <span id="radio-useby" class="w-6 h-6 rounded-full border-2 border-[#4caf50] flex items-center justify-center">
@@ -247,45 +546,48 @@
         </label>
       </div>
 
-      <div class="flex justify-end">
-        <span class="text-[#4caf50] text-[15px]">Teglar(0)</span>
-      </div>
+      <div class="space-y-3">
+        <div class="flex items-center gap-3">
+          <input
+            type="text"
+            id="dateTextInput"
+            oninput="formatDateMask(this)"
+            placeholder="Yaroqlilik muddati (KK.OO.YY)"
+            maxlength="8"
+            inputmode="numeric"
+            class="flex-1 bg-[#1e1e1e] border border-[#333333] rounded-md px-3.5 py-2.5 text-[15px] text-white placeholder-neutral-500 focus:outline-none focus:border-[#4caf50]"
+          />
+          <label class="p-2 text-[#4caf50] cursor-pointer relative">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+            <input type="date" id="nativeDatePicker" onchange="syncFromNativeDate(this.value)" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+          </label>
+        </div>
 
-      <!-- Muddat va Miqdor bloklari ro'yxati -->
-      <div id="dateBlocksContainer" class="space-y-4">
-        <div class="space-y-3">
-          <div class="flex items-center gap-3">
-            <input
-              type="text"
-              id="dateTextInput"
-              oninput="formatDateMask(this)"
-              placeholder="Yaroqlilik muddati (KK.OO.YY)"
-              maxlength="8"
-              inputmode="numeric"
-              class="flex-1 bg-[#1e1e1e] border border-[#333333] rounded-md px-3.5 py-2.5 text-[15px] text-white placeholder-neutral-500 focus:outline-none focus:border-[#4caf50]"
-            />
-            <label class="p-2 text-[#4caf50] cursor-pointer relative">
-              <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-              </svg>
-              <input type="date" id="nativeDatePicker" onchange="syncFromNativeDate(this.value)" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
-            </label>
-          </div>
+        <div class="flex items-center gap-4 pt-1">
+          <span class="text-[16px] text-white">Miqdori</span>
+          <button onclick="stepQuantity(-1)" class="w-8 h-8 flex items-center justify-center text-[#4caf50] text-2xl font-bold active:scale-90">−</button>
+          <input
+            type="number"
+            id="qtyField"
+            value="1"
+            step="1"
+            class="w-16 bg-[#1e1e1e] border border-[#333333] rounded-md py-1.5 text-center text-[16px] text-white focus:outline-none"
+          />
+          <button onclick="stepQuantity(1)" class="w-8 h-8 flex items-center justify-center text-[#4caf50] text-2xl font-bold active:scale-90">+</button>
+          <span id="unitLabelText" class="text-[16px] text-white">dona</span>
+        </div>
 
-          <!-- Miqdori - [ 1 ] + dona -->
-          <div class="flex items-center gap-4 pt-1">
-            <span class="text-[16px] text-white">Miqdori</span>
-            <button onclick="stepQuantity(-1)" class="w-8 h-8 flex items-center justify-center text-[#4caf50] text-2xl font-bold active:scale-90">−</button>
-            <input
-              type="number"
-              id="qtyField"
-              value="1"
-              step="1"
-              class="w-16 bg-[#1e1e1e] border border-[#333333] rounded-md py-1.5 text-center text-[16px] text-white focus:outline-none"
-            />
-            <button onclick="stepQuantity(1)" class="w-8 h-8 flex items-center justify-center text-[#4caf50] text-2xl font-bold active:scale-90">+</button>
-            <span id="unitLabelText" class="text-[16px] text-white">dona</span>
-          </div>
+        <div class="pt-1">
+          <label class="text-xs text-neutral-400">1 dona/kg narxi (so‘mda — hisobot va narxnoma uchun):</label>
+          <input
+            type="number"
+            id="addPriceField"
+            value="25000"
+            step="500"
+            class="w-full mt-1 bg-[#1e1e1e] border border-[#333333] rounded-md px-3.5 py-2 text-[15px] text-white focus:outline-none focus:border-[#4caf50]"
+          />
         </div>
       </div>
 
@@ -293,7 +595,6 @@
         <button onclick="resetDateForSecondEntry()" class="text-[#4caf50] text-[15px] font-medium active:opacity-70">+ muddat</button>
       </div>
 
-      <!-- Yashil Saqlash tugmasi -->
       <button onclick="saveNewExpiryItem()" class="w-full py-3.5 rounded-md bg-[#439847] hover:bg-[#388e3c] text-white font-medium text-[16px] shadow-md active:scale-[0.99] transition">
         Saqlash
       </button>
@@ -301,10 +602,9 @@
   </div>
 
   <!-- ========================================================= -->
-  <!-- TO'LIQ EKRAN 2: "SKANERLASH" VA "QO'LDA KIRITISH" (12-13 rasm) -->
+  <!-- TO'LIQ EKRAN 2: "SKANERLASH" VA "QO'LDA KIRITISH" -->
   <!-- ========================================================= -->
   <div id="scannerScreen" class="fixed inset-0 z-50 hidden bg-black flex flex-col">
-    <!-- Yashil Header -->
     <div class="header-green px-4 h-14 flex items-center justify-between z-20">
       <button onclick="closeScannerScreen()" class="w-9 h-9 rounded-full bg-black/15 border border-white/20 flex items-center justify-center text-white text-xl">
         ‹
@@ -313,30 +613,25 @@
       <div class="w-9"></div>
     </div>
 
-    <!-- Kamera va Qorong'ilashgan ramka -->
     <div class="relative flex-1 bg-black flex flex-col justify-between overflow-hidden">
       <div id="reader" class="absolute inset-0"></div>
 
-      <!-- Yuqori qorong'i qism + Chiroq ikonkasi -->
       <div class="relative z-10 h-1/4 bg-black/60 flex justify-end p-5">
         <button onclick="alert('Kamera fokusda ishlamoqda')" class="text-white/90 h-10 w-10 flex items-center justify-center">
           ⚡
         </button>
       </div>
 
-      <!-- O'rta skaner chizig'i -->
       <div class="relative z-10 flex-1 border-y border-white/20 flex items-center justify-center pointer-events-none">
         <div class="w-full h-[1.5px] bg-red-500/80 shadow-[0_0_8px_#ef4444]"></div>
       </div>
 
-      <!-- Pastki qorong'i qism + "Qo'lda kiritish" tugmasi -->
       <div class="relative z-10 h-1/3 bg-black/65 flex items-center justify-center">
         <button onclick="openManualBarcodeDialog()" class="px-6 py-3 text-white text-[17px] font-medium tracking-wide active:opacity-70">
           Qo‘lda kiritish
         </button>
       </div>
 
-      <!-- "Shtrix kodni kiriting" (12-rasmdagi shaffof modal oyna) -->
       <div id="manualBarcodeModal" class="hidden absolute inset-0 z-30 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6">
         <div class="w-full max-w-sm rounded-3xl bg-[#3a3633]/95 border border-white/15 p-5 space-y-4 shadow-2xl">
           <h3 class="text-center text-white text-[16px] font-medium">Shtrix kodni kiriting</h3>
@@ -357,38 +652,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- MODAL: SOZLAMALAR VA MAXFIY BAZA YUKLASH -->
-  <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center p-4">
-    <div class="w-full max-w-sm rounded-2xl bg-[#1c1c1c] border border-[#333] p-5 space-y-4">
-      <div class="flex justify-between items-center">
-        <h3 class="font-semibold text-[16px]">⚙️ Sozlamalar</h3>
-        <button onclick="closeSettingsModal()" class="text-neutral-400">✕</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="text-neutral-400">Do‘kon / Filial nomi</label>
-          <input type="text" id="setStoreInput" value="K150_CHIRCHIQ O'RMON" class="w-full mt-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white" />
-        </div>
-        <div>
-          <label class="text-neutral-400">Foydalanuvchi F.I.Sh</label>
-          <input type="text" id="setUserInput" value="Valiyev Yorqinbek" class="w-full mt-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white" />
-        </div>
-        <div>
-          <label class="text-neutral-400">Narxini tushirish (Sariq) chegarasi — necha kun qolganda?</label>
-          <input type="number" id="setWarnDays" value="7" class="w-full mt-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white" />
-        </div>
-        <div class="pt-2 border-t border-[#2a2a2a]">
-          <button onclick="document.getElementById('secretFileInput').click()" class="w-full py-2.5 rounded-lg bg-[#263928] text-[#81c784] border border-[#4caf50]/30 font-medium text-xs">
-            📥 Ichki Bar-kod.XLSX bazasini yangilash
-          </button>
-        </div>
-      </div>
-      <button onclick="saveSettings()" class="w-full py-2.5 rounded-lg bg-[#4caf50] text-white font-semibold text-sm">
-        Saqlash
-      </button>
     </div>
   </div>
 
@@ -434,7 +697,7 @@
 
   <script>
     // =========================================================================
-    // 1. BO'LIMLAR (ОТДЕЛ) XARITASI — Sening Bar-kod.XLSX bazangdagi Группа материалов bo'yicha!
+    // 1. BO'LIMLAR (ОТДЕЛ) RO'YXATI VA XARITASI
     // =========================================================================
     const ALL_DEPARTMENTS = [
       "БАДы, Сухофрукты",
@@ -506,9 +769,10 @@
     }
 
     // =========================================================================
-    // 2. YASHIRIN BAZA (Faqat shtrix-kod / SAP-kod orqali tovar va uning Bo'limini topadi)
+    // 2. YASHIRIN ICHKI BAZA (IndexedDB)
     // =========================================================================
     let HIDDEN_DB = [
+      ["117040304-00355", "Баклава Neyna с фисташками, 350г", "ШТ", "4780157170011", "U04020301"],
       ["117030202-00189", "Стаканчик VIOLETTE Блаженство 100г", "ШТ", "4780090180603, 4780090180559", "U04010101"],
       ["117030202-00297", "Пирожное Violette Ассорти эклер 150г±10г", "ШТ", "4780090180443, 4780090180818", "U04010101"],
       ["117040304-00024", "Монэ Эклер", "ШТ", "311147140, 4780099240421, 21304514, 4780099240346", "U04020201"],
@@ -536,9 +800,8 @@
       });
     }
 
-    // IndexedDB xotira
     function saveDbToIndexedDB(data) {
-      const req = indexedDB.open('ShelfyProHiddenDB', 2);
+      const req = indexedDB.open('MuddatProValiyevDB', 3);
       req.onupgradeneeded = (e) => e.target.result.createObjectStore('store');
       req.onsuccess = (e) => {
         const tx = e.target.result.transaction('store', 'readwrite');
@@ -548,7 +811,7 @@
 
     function loadDbFromIndexedDB() {
       return new Promise((resolve) => {
-        const req = indexedDB.open('ShelfyProHiddenDB', 2);
+        const req = indexedDB.open('MuddatProValiyevDB', 3);
         req.onupgradeneeded = (e) => e.target.result.createObjectStore('store');
         req.onsuccess = (e) => {
           const tx = e.target.result.transaction('store', 'readonly');
@@ -580,7 +843,6 @@
       buildSilentIndex();
     }
 
-    // Bar-kod.XLSX yuklanganda to'liq Группа материалов kodi bilan o'qib olish
     function handleSecretUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -608,37 +870,36 @@
         HIDDEN_DB = temp;
         saveDbToIndexedDB(temp);
         buildSilentIndex();
-        closeSettingsModal();
-        alert(`Baza yangilandi! ${temp.length.toLocaleString()} ta mahsulot o'z bo'limlariga (Отдел) biriktirildi.`);
+        renderAdminDashboard();
+        alert(`Baza muvaffaqiyatli yangilandi! ${temp.length.toLocaleString()} ta mahsulot bo'limlarga biriktirildi.`);
       };
       reader.readAsArrayBuffer(file);
     }
 
-    // Tepani 5 marta bosganda ham fayl tanlash ochiladi
-    let tapCnt = 0, tapTimer = null;
-    function secretHeaderTap() {
-      tapCnt++;
-      clearTimeout(tapTimer);
-      if (tapCnt >= 5) {
-        tapCnt = 0;
-        document.getElementById('secretFileInput').click();
-      } else {
-        tapTimer = setTimeout(() => { tapCnt = 0; }, 1400);
-      }
-    }
-
     // =========================================================================
-    // 3. ILOVA HOLATI VA RO'YXATLAR LOGIKASI
+    // 3. ILOVA HOLATI, TOVARLAR VA ARXIV JURNALI
     // =========================================================================
-    let mainTab = 'home';        // 'home' | 'markdown' | 'rejected' | 'remove' | 'options'
-    let subTab = 'depts';        // 'depts' | 'items'
-    let activeDepartment = null; // Tanlangan bo'lim (Отдел)
+    const BRAND_TITLE = "MuddatPro by: Valiyev";
+    let mainTab = 'home';
+    let subTab = 'depts';
+    let activeDepartment = null;
     let selectedProduct = null;
+    let activeActionItemId = null;
+    let activeDiscountPercent = 30;
     let expMode = 'useby';
     let html5QrCode = null;
 
-    let appConfig = JSON.parse(localStorage.getItem('sh_config') || '{"store":"K150_CHIRCHIQ O\'RMON","user":"Valiyev Yorqinbek","warnDays":7}');
-    let itemsList = JSON.parse(localStorage.getItem('sh_items') || '[]');
+    // Eski K150_CHIRCHIQ O'RMON keshini butunlay tozalash
+    localStorage.removeItem('sh_config');
+
+    let itemsList = JSON.parse(localStorage.getItem('mp_valiyev_items') || localStorage.getItem('sh_items') || '[]');
+    let archiveLog = JSON.parse(localStorage.getItem('mp_valiyev_archive') || '[]');
+    let adminPass = localStorage.getItem('mp_valiyev_pwd') || 'Valiyev20';
+
+    function saveAllData() {
+      localStorage.setItem('mp_valiyev_items', JSON.stringify(itemsList));
+      localStorage.setItem('mp_valiyev_archive', JSON.stringify(archiveLog));
+    }
 
     function daysLeft(isoDate) {
       const now = new Date();
@@ -648,17 +909,29 @@
       return Math.round((exp - now) / 86400000);
     }
 
-    // Hozirgi pastki tabga mos tushadigan mahsulotlar
     function getItemsForCurrentMainTab() {
-      const warnLimit = Number(appConfig.warnDays) || 7;
       return itemsList.filter((item) => {
         const d = daysLeft(item.expDate);
-        if (mainTab === 'home') return item.status !== 'removed';
-        if (mainTab === 'markdown') return item.status === 'markdown' || (item.status === 'active' && d > 0 && d <= warnLimit);
+        if (mainTab === 'home') return true;
+        if (mainTab === 'markdown') return item.status === 'markdown' || (item.status === 'active' && d > 0 && d <= 7);
         if (mainTab === 'rejected') return item.status === 'rejected';
         if (mainTab === 'remove') return item.status === 'remove' || (item.status === 'active' && d <= 0);
         return true;
       });
+    }
+
+    function toggleQuickTopMenu() {
+      document.getElementById('quickTopMenu').classList.toggle('hidden');
+    }
+
+    function sortItemsMode(mode) {
+      if (mode === 'urgent') {
+        itemsList.sort((a, b) => daysLeft(a.expDate) - daysLeft(b.expDate));
+      } else {
+        itemsList.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      }
+      saveAllData();
+      renderMainLists();
     }
 
     function updateHeaderAndNavigation() {
@@ -668,7 +941,6 @@
       const subTabsBar = document.getElementById('subTabsBar');
       const fab = document.getElementById('fabAddBtn');
 
-      // Pastki 5 ta tugma aktivligi
       ['home', 'markdown', 'rejected', 'remove', 'options'].forEach((t) => {
         const btn = document.getElementById(`bnav-${t}`);
         if (t === mainTab) {
@@ -679,7 +951,7 @@
       });
 
       if (mainTab === 'options') {
-        titleEl.textContent = "Variantlar";
+        titleEl.textContent = BRAND_TITLE;
         subTabsBar.classList.add('hidden');
         fab.classList.add('hidden');
         backBtn.classList.add('hidden');
@@ -687,8 +959,6 @@
         document.getElementById('deptsContainer').classList.add('hidden');
         document.getElementById('itemsContainer').classList.add('hidden');
         document.getElementById('optionsContainer').classList.remove('hidden');
-        document.getElementById('profileName').textContent = appConfig.user;
-        document.getElementById('profileStore').textContent = appConfig.store;
         return;
       }
 
@@ -703,13 +973,12 @@
       } else {
         backBtn.classList.add('hidden');
         spacer.classList.remove('hidden');
-        if (mainTab === 'home') titleEl.textContent = appConfig.store;
+        if (mainTab === 'home') titleEl.textContent = BRAND_TITLE;
         if (mainTab === 'markdown') titleEl.textContent = "Narxini tushirish uchun";
         if (mainTab === 'rejected') titleEl.textContent = "Rad etilgan";
         if (mainTab === 'remove') titleEl.textContent = "Olib tashlash uchun";
       }
 
-      // Sub-tab chizig'i
       const btnDepts = document.getElementById('subtab-depts');
       const btnItems = document.getElementById('subtab-items');
       if (subTab === 'depts') {
@@ -724,17 +993,15 @@
     }
 
     function renderMainLists() {
-      localStorage.setItem('sh_items', JSON.stringify(itemsList));
+      saveAllData();
       const deptsBox = document.getElementById('deptsContainer');
       const itemsBox = document.getElementById('itemsContainer');
       const tabItems = getItemsForCurrentMainTab();
 
-      // 1. BO'LIMLAR (ОТДЕЛ) RO'YXATI
       if (subTab === 'depts' && !activeDepartment) {
         deptsBox.classList.remove('hidden');
         itemsBox.classList.add('hidden');
 
-        // Asosiy sahifada barcha 26 ta bo'lim chiqadi; boshqa tablarda esa ichida tovari bor bo'limlar chiqadi
         const deptCounts = {};
         tabItems.forEach((it) => {
           deptCounts[it.dept] = (deptCounts[it.dept] || 0) + 1;
@@ -765,15 +1032,12 @@
         return;
       }
 
-      // 2. BARCHA MUDDATLAR (YOKI TANLANGAN BO'LIM ICHIDAGI TOVARLAR)
       deptsBox.classList.add('hidden');
       itemsBox.classList.remove('hidden');
 
       const filtered = activeDepartment
         ? tabItems.filter((i) => i.dept === activeDepartment)
         : tabItems;
-
-      filtered.sort((a, b) => daysLeft(a.expDate) - daysLeft(b.expDate));
 
       if (filtered.length === 0) {
         itemsBox.innerHTML = `
@@ -787,35 +1051,48 @@
       itemsBox.innerHTML = filtered.map((item) => {
         const d = daysLeft(item.expDate);
         const badgeColor = d <= 0
-          ? 'bg-red-500/20 text-red-400 border-red-500/30'
+          ? 'bg-red-500/20 text-red-400 border-red-500/40'
           : d <= 7
-          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-        const dText = d < 0 ? `${Math.abs(d)} kun o‘tdi` : d === 0 ? 'Bugun' : `${d} kun`;
+          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+        const dText = d < 0 ? `${Math.abs(d)} kun o‘tdi` : d === 0 ? 'Bugun tugaydi' : `${d} kun qoldi`;
 
         return `
-          <div class="p-4 bg-[#141414] space-y-2">
-            <div class="flex justify-between items-start gap-2">
+          <div class="p-4 bg-[#141414] space-y-2.5">
+            <!-- Tovar yoki srok ustiga bosilganda "O'chirish / Boshqarish" katalogi ochiladi -->
+            <div onclick="openItemActionSheet('${item.id}')" class="flex justify-between items-start gap-2 cursor-pointer active:opacity-80">
               <div>
-                <p class="text-[11px] text-[#81c784] font-medium">${item.dept}</p>
-                <h4 class="text-[15px] font-medium text-white leading-snug mt-0.5">${item.name}</h4>
+                <div class="flex items-center gap-2">
+                  <p class="text-[11px] text-[#81c784] font-medium">${item.dept}</p>
+                  ${item.discountPct ? `<span class="px-1.5 py-0.5 rounded bg-amber-400 text-black font-black text-[10px]">-${item.discountPct}% AKSIYA</span>` : ''}
+                </div>
+                <h4 class="text-[15px] font-semibold text-white leading-snug mt-0.5">${item.name}</h4>
                 <p class="text-xs text-neutral-400 font-mono mt-0.5">SAP: ${item.sap} • ШК: ${item.barcode}</p>
               </div>
-              <span class="px-2.5 py-1 rounded-md text-xs font-semibold border shrink-0 ${badgeColor}">
-                ${dText}
-              </span>
+              <button type="button" onclick="event.stopPropagation(); openItemActionSheet('${item.id}')" class="px-2.5 py-1 rounded-md text-xs font-semibold border shrink-0 ${badgeColor} active:scale-95">
+                ${dText} ▾
+              </button>
             </div>
 
-            <div class="flex justify-between items-center text-xs text-neutral-300 pt-1">
-              <span>Muddati: <b>${item.displayDate}</b></span>
+            <div onclick="openItemActionSheet('${item.id}')" class="flex justify-between items-center text-xs text-neutral-300 pt-1 cursor-pointer">
+              <span>Muddati: <b class="underline decoration-dotted text-white">${item.displayDate}</b></span>
               <span>Miqdori: <b>${item.qty} ${item.unit === 'КГ' ? 'kg' : 'dona'}</b></span>
             </div>
 
+            <!-- 4 ta tezkor harakat tugmasi -->
             <div class="grid grid-cols-4 gap-1.5 pt-2">
-              <button onclick="setItemStatus(${item.id}, 'markdown')" class="py-1.5 rounded bg-[#262626] text-amber-300 text-[11px] font-medium active:scale-95">💲 Arzonlatish</button>
-              <button onclick="setItemStatus(${item.id}, 'rejected')" class="py-1.5 rounded bg-[#262626] text-orange-300 text-[11px] font-medium active:scale-95">🚫 Rad etish</button>
-              <button onclick="setItemStatus(${item.id}, 'remove')" class="py-1.5 rounded bg-[#262626] text-rose-300 text-[11px] font-medium active:scale-95">⤵️ Olib tashlash</button>
-              <button onclick="deleteItem(${item.id})" class="py-1.5 rounded bg-[#262626] text-neutral-400 text-[11px] font-medium active:scale-95">🗑️ O‘chirish</button>
+              <button type="button" onclick="event.stopPropagation(); openDiscountModal('${item.id}')" class="py-2 rounded-lg bg-[#242424] hover:bg-[#2e2e2e] text-amber-300 text-[11px] font-semibold active:scale-95">
+                💲 Arzonlatish
+              </button>
+              <button type="button" onclick="event.stopPropagation(); changeItemTabStatus('${item.id}', 'rejected')" class="py-2 rounded-lg bg-[#242424] hover:bg-[#2e2e2e] text-orange-300 text-[11px] font-semibold active:scale-95">
+                🚫 Rad etish
+              </button>
+              <button type="button" onclick="event.stopPropagation(); changeItemTabStatus('${item.id}', 'remove')" class="py-2 rounded-lg bg-[#242424] hover:bg-[#2e2e2e] text-sky-300 text-[11px] font-semibold active:scale-95">
+                ⤵️ Olib tashlash
+              </button>
+              <button type="button" onclick="event.stopPropagation(); deleteItemDirectly('${item.id}')" class="py-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 text-[11px] font-bold active:scale-95">
+                🗑️ O‘chirish
+              </button>
             </div>
           </div>
         `;
@@ -825,6 +1102,7 @@
     function switchMainTab(tab) {
       mainTab = tab;
       activeDepartment = null;
+      document.getElementById('quickTopMenu').classList.add('hidden');
       updateHeaderAndNavigation();
     }
 
@@ -846,21 +1124,401 @@
       updateHeaderAndNavigation();
     }
 
-    function setItemStatus(id, st) {
-      const it = itemsList.find((x) => x.id === id);
-      if (it) {
-        it.status = st;
-        renderMainLists();
-      }
+    // =========================================================================
+    // 4. TOVARNI O'CHIRISH KATALOGI VA CHEGIRMA NARXNOMASI GENERATORI
+    // =========================================================================
+    function openItemActionSheet(id) {
+      const it = itemsList.find((x) => String(x.id) === String(id));
+      if (!it) return;
+      activeActionItemId = it.id;
+      document.getElementById('sheetItemDept').textContent = it.dept;
+      document.getElementById('sheetItemName').textContent = it.name;
+      document.getElementById('sheetItemMeta').textContent = `SAP: ${it.sap} | Srok: ${it.displayDate} | Miqdor: ${it.qty} ${it.unit}`;
+      document.getElementById('itemActionSheet').classList.remove('hidden');
     }
 
-    function deleteItem(id) {
-      itemsList = itemsList.filter((x) => x.id !== id);
+    function closeItemActionSheet() {
+      document.getElementById('itemActionSheet').classList.add('hidden');
+    }
+
+    function confirmRealDeleteItem() {
+      if (activeActionItemId === null) return;
+      itemsList = itemsList.filter((x) => String(x.id) !== String(activeActionItemId));
+      activeActionItemId = null;
+      closeItemActionSheet();
+      renderMainLists();
+    }
+
+    function deleteItemDirectly(id) {
+      openItemActionSheet(id);
+    }
+
+    function changeItemTabStatus(id, newStatus) {
+      const it = itemsList.find((x) => String(x.id) === String(id));
+      if (!it) return;
+      it.status = newStatus;
+      renderMainLists();
+    }
+
+    function archiveItemAction(actionType) {
+      const idx = itemsList.findIndex((x) => String(x.id) === String(activeActionItemId));
+      if (idx === -1) return;
+      const it = itemsList[idx];
+      archiveLog.unshift({
+        id: Date.now(),
+        action: actionType, // 'sold' | 'vozvrat' | 'spisaniye'
+        sap: it.sap,
+        name: it.name,
+        dept: it.dept,
+        qty: it.qty,
+        unit: it.unit,
+        price: Number(it.price) || 25000,
+        expDate: it.displayDate,
+        timestamp: new Date().toLocaleString('uz-UZ')
+      });
+      itemsList.splice(idx, 1);
+      closeItemActionSheet();
+      renderMainLists();
+    }
+
+    function triggerDiscountFromSheet() {
+      const id = activeActionItemId;
+      closeItemActionSheet();
+      if (id !== null) openDiscountModal(id);
+    }
+
+    // 20% - 80% CHEGIRMA VA SUPER NARXNOMA
+    function openDiscountModal(id) {
+      const it = itemsList.find((x) => String(x.id) === String(id));
+      if (!it) return;
+      activeActionItemId = it.id;
+      document.getElementById('discBasePriceInput').value = it.price || 25000;
+      selectDiscountPercent(it.discountPct || 30);
+      document.getElementById('discountModal').classList.remove('hidden');
+    }
+
+    function closeDiscountModal() {
+      document.getElementById('discountModal').classList.add('hidden');
+    }
+
+    function selectDiscountPercent(pct) {
+      activeDiscountPercent = pct;
+      document.querySelectorAll('.pct-btn').forEach((btn) => {
+        const bPct = Number(btn.getAttribute('data-pct'));
+        if (bPct === pct) {
+          btn.className = "pct-btn py-2 rounded-xl bg-amber-400 text-black text-xs font-black border border-amber-300 shadow-md scale-105 transition";
+        } else {
+          btn.className = "pct-btn py-2 rounded-xl bg-[#262626] text-white text-xs font-bold border border-[#3a3a3a] transition";
+        }
+      });
+      renderSuperPriceTagCanvas();
+    }
+
+    function renderSuperPriceTagCanvas() {
+      const it = itemsList.find((x) => String(x.id) === String(activeActionItemId));
+      if (!it) return;
+      const basePrice = Number(document.getElementById('discBasePriceInput').value) || 25000;
+      const newPrice = Math.round(basePrice * (1 - activeDiscountPercent / 100));
+
+      const canvas = document.getElementById('priceTagCanvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+
+      // Sariq fond
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(0, 0, W, H);
+
+      // Qora ramka
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#111827';
+      ctx.strokeRect(8, 8, W - 16, H - 16);
+
+      // Tepada Qizil banner: SUPER AKSIYA -XX%
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(14, 14, W - 28, 68);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 30px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('🔥 SUPER NARX', 30, 58);
+
+      ctx.font = '900 36px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`-${activeDiscountPercent}%`, W - 30, 60);
+
+      // Mahsulot nomi
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '800 24px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      const nameStr = String(it.name);
+      if (nameStr.length > 34) {
+        ctx.fillText(nameStr.slice(0, 34), W / 2, 122);
+        ctx.fillText(nameStr.slice(34, 68), W / 2, 152);
+      } else {
+        ctx.fillText(nameStr, W / 2, 135);
+      }
+
+      // Eski narx (chizilgan)
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#334155';
+      ctx.font = '700 18px -apple-system, sans-serif';
+      ctx.fillText('Eski narx:', 35, 205);
+
+      const oldPriceStr = `${basePrice.toLocaleString()} so'm`;
+      ctx.font = '800 28px -apple-system, sans-serif';
+      ctx.fillText(oldPriceStr, 35, 240);
+      const oldW = ctx.measureText(oldPriceStr).width;
+      ctx.strokeStyle = '#dc2626';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(30, 232);
+      ctx.lineTo(40 + oldW, 226);
+      ctx.stroke();
+
+      // Yangi chegirmali narx
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#dc2626';
+      ctx.font = '800 18px -apple-system, sans-serif';
+      ctx.fillText('YANGI NARX:', W - 35, 198);
+
+      ctx.font = '900 50px -apple-system, sans-serif';
+      ctx.fillText(`${newPrice.toLocaleString()}`, W - 35, 248);
+      ctx.font = '800 18px -apple-system, sans-serif';
+      ctx.fillText(`so'm / ${it.unit === 'КГ' ? 'kg' : 'dona'}`, W - 35, 272);
+
+      // Pastki oq shtrix-kod zonasi
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(24, 290, W - 48, 70);
+
+      // Shtrix-kod chiziqlari imitatsiyasi
+      ctx.fillStyle = '#000000';
+      const codeStr = String(it.barcode || it.sap || '478001234567');
+      for (let i = 0; i < 48; i++) {
+        const bw = (i % 3 === 0) ? 4 : (i % 2 === 0 ? 2 : 1.5);
+        ctx.fillRect(40 + i * 5.2, 298, bw, 38);
+      }
+      ctx.font = '700 13px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`ШК: ${codeStr}`, 40, 352);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#1e293b';
+      ctx.font = '700 14px monospace';
+      ctx.fillText(`SAP: ${it.sap} | Srok: ${it.displayDate}`, W - 38, 330);
+      ctx.font = '700 12px -apple-system, sans-serif';
+      ctx.fillText('MuddatPro by: Valiyev', W - 38, 352);
+    }
+
+    function downloadPriceTagImage() {
+      const it = itemsList.find((x) => String(x.id) === String(activeActionItemId));
+      if (!it) return;
+      renderSuperPriceTagCanvas();
+      const canvas = document.getElementById('priceTagCanvas');
+      const link = document.createElement('a');
+      link.download = `Narxnoma_${it.sap}_-${activeDiscountPercent}pct.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function applyDiscountAndClose() {
+      const it = itemsList.find((x) => String(x.id) === String(activeActionItemId));
+      if (!it) return;
+      const basePrice = Number(document.getElementById('discBasePriceInput').value) || 25000;
+      it.price = basePrice;
+      it.discountPct = activeDiscountPercent;
+      it.discountedPrice = Math.round(basePrice * (1 - activeDiscountPercent / 100));
+      it.status = 'markdown';
+      closeDiscountModal();
       renderMainLists();
     }
 
     // =========================================================================
-    // 4. "MUDDATNI QO'SHISH" VA SKANER FUNKSIYALARI
+    // 5. VARIANTLARNI 5 MARTA BOSGANDA ADMIN PANEL (Parol: Valiyev20)
+    // =========================================================================
+    let optTapCount = 0;
+    let optTapTimer = null;
+
+    function handleOptionsTabClick() {
+      switchMainTab('options');
+      optTapCount++;
+      clearTimeout(optTapTimer);
+      if (optTapCount >= 5) {
+        optTapCount = 0;
+        openAdminLoginModal();
+      } else {
+        optTapTimer = setTimeout(() => { optTapCount = 0; }, 1600);
+      }
+    }
+
+    function openAdminLoginModal() {
+      document.getElementById('adminPwdInput').value = '';
+      document.getElementById('adminLoginModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('adminPwdInput').focus(), 100);
+    }
+
+    function closeAdminLoginModal() {
+      document.getElementById('adminLoginModal').classList.add('hidden');
+    }
+
+    function verifyAdminPassword() {
+      const inp = document.getElementById('adminPwdInput').value.trim();
+      if (inp === adminPass) {
+        closeAdminLoginModal();
+        openAdminPanel();
+      } else {
+        alert("Parol noto‘g‘ri! Boshlang‘ich parol: Valiyev20");
+      }
+    }
+
+    function openAdminPanel() {
+      renderAdminDashboard();
+      document.getElementById('adminPanelScreen').classList.remove('hidden');
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('adminPanelScreen').classList.add('hidden');
+    }
+
+    function changeAdminPassword() {
+      const np = document.getElementById('newAdminPwd').value.trim();
+      if (!np) return;
+      adminPass = np;
+      localStorage.setItem('mp_valiyev_pwd', np);
+      document.getElementById('newAdminPwd').value = '';
+      alert(`Admin paroli yangilandi: ${np}`);
+    }
+
+    function renderAdminDashboard() {
+      let crit = 0, warn = 0, safe = 0, activeTotalVal = 0;
+      const deptMap = {};
+
+      itemsList.forEach((it) => {
+        const d = daysLeft(it.expDate);
+        const unitPrice = Number(it.discountedPrice || it.price || 25000);
+        activeTotalVal += (Number(it.qty) || 1) * unitPrice;
+
+        if (d <= 2) crit++;
+        else if (d <= 7 || it.status === 'markdown') warn++;
+        else safe++;
+
+        deptMap[it.dept] = (deptMap[it.dept] || 0) + 1;
+      });
+
+      let soldSum = 0, vozvratSum = 0, spisaniyeSum = 0;
+      archiveLog.forEach((log) => {
+        const sum = (Number(log.qty) || 1) * (Number(log.price) || 25000);
+        if (log.action === 'sold') soldSum += sum;
+        if (log.action === 'vozvrat') vozvratSum += sum;
+        if (log.action === 'spisaniye') spisaniyeSum += sum;
+      });
+
+      document.getElementById('admTotalValue').textContent = Math.round(activeTotalVal).toLocaleString() + " so‘m";
+      document.getElementById('admSoldSum').textContent = Math.round(soldSum).toLocaleString() + " so‘m";
+      document.getElementById('admVozvratSum').textContent = Math.round(vozvratSum).toLocaleString() + " so‘m";
+      document.getElementById('admSpisaniyeSum').textContent = Math.round(spisaniyeSum).toLocaleString() + " so‘m";
+
+      document.getElementById('admCritCount').textContent = crit;
+      document.getElementById('admWarnCount').textContent = warn;
+      document.getElementById('admSafeCount').textContent = safe;
+
+      const total = Math.max(1, crit + warn + safe);
+      const pCrit = Math.round((crit / total) * 100);
+      const pWarn = Math.round((warn / total) * 100);
+      const pSafe = Math.max(0, 100 - pCrit - pWarn);
+
+      document.getElementById('barCrit').style.width = `${pCrit}%`;
+      document.getElementById('barWarn').style.width = `${pWarn}%`;
+      document.getElementById('barSafe').style.width = `${pSafe}%`;
+
+      document.getElementById('pctCritTxt').textContent = `🔴 Kritik: ${pCrit}% (${crit})`;
+      document.getElementById('pctWarnTxt').textContent = `🟡 Sariq: ${pWarn}% (${warn})`;
+      document.getElementById('pctSafeTxt').textContent = `🟢 Yaxshi: ${pSafe}% (${safe})`;
+
+      const sortedDepts = Object.entries(deptMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const deptBox = document.getElementById('admDeptBreakdown');
+      if (sortedDepts.length === 0) {
+        deptBox.innerHTML = `<p class="text-neutral-500">Hozircha faol ro‘yxat bo‘sh</p>`;
+      } else {
+        deptBox.innerHTML = sortedDepts.map(([dName, cnt]) => `
+          <div class="flex justify-between items-center bg-black/30 px-3 py-1.5 rounded-lg">
+            <span class="text-neutral-200 truncate">${dName}</span>
+            <span class="font-bold text-[#81c784]">${cnt} ta</span>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('admArchiveCount').textContent = `${archiveLog.length} ta amal`;
+      const archBox = document.getElementById('admArchiveList');
+      if (archiveLog.length === 0) {
+        archBox.innerHTML = `<p class="text-xs text-neutral-500 py-3 text-center">Hali Spisaniye, Vozvrat yoki Sotuv qayd etilmagan</p>`;
+      } else {
+        archBox.innerHTML = archiveLog.slice(0, 25).map((l) => {
+          const badge = l.action === 'sold'
+            ? '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">SOTILDI</span>'
+            : l.action === 'vozvrat'
+            ? '<span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-bold">VOZVRAT</span>'
+            : '<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold">SPISANIYE</span>';
+          return `
+            <div class="py-2 flex justify-between items-center text-xs">
+              <div>
+                <p class="text-white font-medium">${l.name}</p>
+                <p class="text-[10px] text-neutral-400">SAP: ${l.sap} • ${l.qty} ${l.unit} • ${l.timestamp}</p>
+              </div>
+              ${badge}
+            </div>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('admDbInfo').textContent = `Ichki yashirin baza: ${HIDDEN_DB.length.toLocaleString()} ta mahsulot | ${BARCODE_MAP.size.toLocaleString()} ta shtrix-kod`;
+    }
+
+    // KENG KO'LAMLI EXCEL (.XLSX) HISOBOT EKSPORTI
+    function exportComprehensiveExcelReport() {
+      const wb = XLSX.utils.book_new();
+
+      // 1-Sahifa: Faol Srokdagi Tovarlar
+      const activeRows = itemsList.map((it, idx) => ({
+        "№": idx + 1,
+        "Bo'lim (Отдел)": it.dept,
+        "SAP-kod": it.sap,
+        "Shtrix-kod": it.barcode,
+        "Mahsulot nomi": it.name,
+        "Yaroqlilik muddati": it.displayDate,
+        "Qolgan kun": daysLeft(it.expDate),
+        "Miqdori": it.qty,
+        "O'lchov birligi": it.unit,
+        "Asl narxi (so'm)": it.price || 25000,
+        "Chegirma (%)": it.discountPct || 0,
+        "Yangi narxi (so'm)": it.discountedPrice || it.price || 25000,
+        "Holati": it.status
+      }));
+      const wsActive = XLSX.utils.json_to_sheet(activeRows.length ? activeRows : [{ "Ma'lumot": "Faol tovarlar yo'q" }]);
+      XLSX.utils.book_append_sheet(wb, wsActive, "Faol_Muddatlar");
+
+      // 2-Sahifa: Spisaniye, Vozvrat va Sotilganlar Arxivi
+      const archiveRows = archiveLog.map((l, idx) => ({
+        "№": idx + 1,
+        "Amal turi": l.action === 'sold' ? 'Sotildi' : l.action === 'vozvrat' ? 'Vozvrat' : 'Spisaniye',
+        "Bo'lim": l.dept,
+        "SAP-kod": l.sap,
+        "Mahsulot nomi": l.name,
+        "Miqdori": l.qty,
+        "Birligi": l.unit,
+        "1 dona/kg narxi": l.price,
+        "Jami summa (so'm)": Math.round((Number(l.qty) || 1) * (Number(l.price) || 0)),
+        "Srok sanasi": l.expDate,
+        "Bajarilgan vaqt": l.timestamp
+      }));
+      const wsArchive = XLSX.utils.json_to_sheet(archiveRows.length ? archiveRows : [{ "Ma'lumot": "Arxiv bo'sh" }]);
+      XLSX.utils.book_append_sheet(wb, wsArchive, "Spisaniye_Vozvrat_Sotuv");
+
+      XLSX.writeFile(wb, `MuddatPro_Valiyev_Hisobot_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
+    // =========================================================================
+    // 6. "MUDDATNI QO'SHISH" VA SKANER FUNKSIYALARI
     // =========================================================================
     function openAddScreen() {
       document.getElementById('addScreen').classList.remove('hidden');
@@ -898,19 +1556,16 @@
       const drop = document.getElementById('lookupDropdown');
       if (!q) { drop.innerHTML = ''; return; }
 
-      // 1. Aniq shtrix-kod bo'yicha
       if (BARCODE_MAP.has(q)) {
         chooseProduct(BARCODE_MAP.get(q));
         drop.innerHTML = '';
         return;
       }
-      // 2. Aniq SAP-kod bo'yicha
       if (SAP_MAP.has(q.toLowerCase())) {
         chooseProduct(SAP_MAP.get(q.toLowerCase()));
         drop.innerHTML = '';
         return;
       }
-
       if (q.length < 3) { drop.innerHTML = ''; return; }
 
       const matches = [];
@@ -960,7 +1615,6 @@
       }
     }
 
-    // KK.OO.YY sana formatlagich
     function formatDateMask(input) {
       let digits = input.value.replace(/\D/g, '');
       if (digits.length > 6) digits = digits.slice(0, 6);
@@ -1002,10 +1656,11 @@
         alert("Avval mahsulotni skanerlang yoki tanlang!");
         return;
       }
-      saveCurrentEntryInternal(false);
-      document.getElementById('dateTextInput').value = '';
-      document.getElementById('qtyField').value = '1';
-      alert("Birinchi muddat saqlandi! Endi shu tovarning keyingi muddatini kiriting.");
+      if (saveCurrentEntryInternal(true)) {
+        document.getElementById('dateTextInput').value = '';
+        document.getElementById('qtyField').value = '1';
+        alert("Birinchi muddat saqlandi! Endi shu tovarning keyingi muddatini kiriting.");
+      }
     }
 
     function saveNewExpiryItem() {
@@ -1027,6 +1682,7 @@
         return false;
       }
       const qty = parseFloat(document.getElementById('qtyField').value) || 1;
+      const price = parseFloat(document.getElementById('addPriceField').value) || 25000;
 
       itemsList.unshift({
         id: Date.now() + Math.floor(Math.random() * 1000),
@@ -1038,15 +1694,16 @@
         expDate: isoDate,
         displayDate: rawDate,
         qty,
+        price,
         mode: expMode,
         status: 'active'
       });
-      localStorage.setItem('sh_items', JSON.stringify(itemsList));
+      saveAllData();
       return true;
     }
 
     // =========================================================================
-    // 5. KAMERA SKANERI VA "QO'LDA KIRITISH" DIALOGI
+    // 7. SKANER VA QO'SHIMCHA MODALLAR
     // =========================================================================
     function openScannerScreen() {
       document.getElementById('scannerScreen').classList.remove('hidden');
@@ -1090,31 +1747,12 @@
       handleCodeLookup(code);
     }
 
-    // =========================================================================
-    // 6. VARIANTLAR VA QO'SHIMCHA MODALLAR
-    // =========================================================================
-    function openTopMenu() {
-      openSettingsModal();
+    function openContactModal() {
+      document.getElementById('contactModal').classList.remove('hidden');
     }
 
-    function openSettingsModal() {
-      document.getElementById('setStoreInput').value = appConfig.store;
-      document.getElementById('setUserInput').value = appConfig.user;
-      document.getElementById('setWarnDays').value = appConfig.warnDays;
-      document.getElementById('settingsModal').classList.remove('hidden');
-    }
-
-    function closeSettingsModal() {
-      document.getElementById('settingsModal').classList.add('hidden');
-    }
-
-    function saveSettings() {
-      appConfig.store = document.getElementById('setStoreInput').value.trim() || "K150_CHIRCHIQ O'RMON";
-      appConfig.user = document.getElementById('setUserInput').value.trim() || "Valiyev Yorqinbek";
-      appConfig.warnDays = parseInt(document.getElementById('setWarnDays').value, 10) || 7;
-      localStorage.setItem('sh_config', JSON.stringify(appConfig));
-      closeSettingsModal();
-      updateHeaderAndNavigation();
+    function closeContactModal() {
+      document.getElementById('contactModal').classList.add('hidden');
     }
 
     function openCalcModal() {
@@ -1138,7 +1776,7 @@
     }
 
     function openMyActionsModal() {
-      alert(`Jami kiritilgan muddatlar: ${itemsList.length} ta`);
+      alert(`Faol muddatdagi tovarlar: ${itemsList.length} ta\nArxivdagi amallar (Sotuv/Vozvrat/Spisaniye): ${archiveLog.length} ta`);
     }
 
     function openInstallModal() {
@@ -1148,12 +1786,11 @@
     function clearExpiredHistory() {
       if (confirm("Barcha kiritilgan muddatlar ro'yxatini tozalamoqchimisiz?")) {
         itemsList = [];
-        localStorage.setItem('sh_items', '[]');
+        saveAllData();
         updateHeaderAndNavigation();
       }
     }
 
-    // Ilovani ishga tushirish
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
