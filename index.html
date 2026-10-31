@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="uz" class="dark">
+<html lang="uz">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>MuddatPro — Srok Control</title>
+  <title>Shelfy Pro — Srok Nazorati</title>
 
   <!-- PWA & iOS "На экран Домой" Meta teglari -->
   <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#0b0f19" />
+  <meta name="theme-color" content="#388e3c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="MuddatPro" />
@@ -19,314 +19,539 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
   <style>
+    :root {
+      --green-main: #388e3c;
+      --green-accent: #4caf50;
+      --bg-dark: #121212;
+      --row-dark: #181818;
+      --border-dark: #262626;
+    }
     body {
-      background-color: #0b0f19;
-      color: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
       -webkit-tap-highlight-color: transparent;
       padding-top: env(safe-area-inset-top);
-      padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+      padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+      margin: 0;
+      user-select: none;
     }
-    .glass {
-      background: rgba(17, 24, 39, 0.85);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .header-green {
+      background-color: var(--green-main);
+    }
+    .dept-row {
+      background-color: var(--bg-dark);
+      border-bottom: 1px solid var(--border-dark);
+      transition: background-color 0.15s;
+    }
+    .dept-row:active {
+      background-color: #222222;
+    }
+    .bottom-pill {
+      background: rgba(38, 38, 38, 0.94);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+    .nav-item-active {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+      color: #ffffff;
     }
     #reader video {
-      border-radius: 1rem;
-      object-fit: cover;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
     }
   </style>
 </head>
-<body class="min-h-screen select-none">
+<body class="min-h-screen">
 
-  <!-- HEADER (Baza haqida hech qanday ma'lumot yo'q) -->
-  <header class="sticky top-0 z-30 glass px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-2.5">
-      <!-- MAXFIY TUGMA: Shu "M" belgisini 5 marta tez bossang, Excel bazani yuklash oynasi ochiladi -->
-      <div onclick="secretAdminTap()" class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-lg shadow-lg shadow-emerald-500/20 cursor-pointer active:scale-95 transition">
-        M
-      </div>
-      <div>
-        <div class="flex items-center gap-1.5">
-          <h1 class="font-bold text-base tracking-tight">MuddatPro</h1>
-          <span id="sysStatus" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
-            Online
-          </span>
-        </div>
-        <p class="text-[11px] text-slate-400">Aqlli srok nazorati tizimi</p>
-      </div>
-    </div>
+  <!-- YUQORI YASHIL HEADER -->
+  <header class="sticky top-0 z-30 header-green px-4 h-14 flex items-center justify-between shadow-md">
+    <button id="backBtn" onclick="closeDepartmentFilter()" class="hidden w-9 h-9 rounded-full bg-black/15 flex items-center justify-center text-white text-xl font-light active:scale-95">
+      ‹
+    </button>
+    <div id="headerSpacer" class="w-9"></div>
 
-    <div class="flex items-center gap-2">
-      <button onclick="openInstallModal()" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold flex items-center gap-1 active:scale-95 transition">
-        📲 Ekranga oʻrnatish
-      </button>
-      <!-- Yashirin fayl input (faqat admin 5 marta bosganda ishlaydi) -->
-      <input type="file" id="secretFileInput" accept=".xlsx,.xls,.json" class="hidden" onchange="handleSecretUpload(event)" />
-    </div>
+    <h1 id="headerTitle" onclick="secretHeaderTap()" class="font-semibold text-[17px] text-white tracking-wide truncate text-center flex-1">
+      K150_CHIRCHIQ O'RMON
+    </h1>
+
+    <button onclick="openTopMenu()" class="w-9 h-9 rounded-full bg-black/15 border border-white/20 flex items-center justify-center text-white active:scale-95">
+      ⋮
+    </button>
+    <!-- Yashirin Excel/JSON Baza yuklagich -->
+    <input type="file" id="secretFileInput" accept=".xlsx,.xls,.json" class="hidden" onchange="handleSecretUpload(event)" />
   </header>
 
-  <main class="max-w-md mx-auto p-4 space-y-4">
+  <!-- SUB-TABS: "Bo'limlar" | "Barcha muddatlar" (Variantlar bo'limida yashiriladi) -->
+  <div id="subTabsBar" class="sticky top-14 z-20 bg-[#161616] grid grid-cols-2 border-b border-[#262626]">
+    <button onclick="setSubTab('depts')" id="subtab-depts" class="py-3.5 text-[15px] font-medium text-white border-b-2 border-[#4caf50] transition">
+      Bo‘limlar
+    </button>
+    <button onclick="setSubTab('items')" id="subtab-items" class="py-3.5 text-[15px] font-medium text-neutral-400 border-b-2 border-transparent transition">
+      Barcha muddatlar
+    </button>
+  </div>
 
-    <!-- TAB 1: DASHBOARD (SVETOFOR) -->
-    <section id="tab-dashboard" class="space-y-4">
-      <!-- Moliyaviy Tejamkorlik Karta -->
-      <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/60 border border-emerald-500/20 shadow-xl">
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">🛡️ Saqlab qolingan foyda</p>
-            <h2 id="savedMoneyText" class="text-2xl font-black text-emerald-400 mt-0.5">0 soʻm</h2>
+  <!-- ASOSIY KONTENT (Ro'yxatlar) -->
+  <main id="mainContent" class="max-w-lg mx-auto">
+    <!-- 1. Bo'limlar (Отдел) ro'yxati -->
+    <div id="deptsContainer" class="divide-y divide-[#262626]"></div>
+
+    <!-- 2. Tovarlar (Muddatlar) ro'yxati -->
+    <div id="itemsContainer" class="hidden divide-y divide-[#262626]"></div>
+
+    <!-- 3. Variantlar (Profil va Sozlamalar sahifasi) -->
+    <div id="optionsContainer" class="hidden">
+      <!-- Foydalanuvchi bloki -->
+      <div class="p-4 border-b border-[#262626] space-y-3">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-800">
+            <svg class="w-9 h-9" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"/>
+            </svg>
           </div>
-          <span class="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-            Faol nazorat
-          </span>
+          <div>
+            <p id="profileName" class="text-[17px] font-medium text-white">Valiyev Yorqinbek</p>
+            <p id="profileId" class="text-[15px] text-neutral-300 mt-0.5">35601 (ID: 325062)</p>
+          </div>
         </div>
-        <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800/80 text-xs">
-          <div>
-            <span class="text-slate-400">⚠️ Xavf ostida:</span>
-            <p id="riskMoneyText" class="font-bold text-rose-400 mt-0.5">0 soʻm</p>
-          </div>
-          <div>
-            <span class="text-slate-400">↩️ Vozvrat / Spisaniye:</span>
-            <p id="lossMoneyText" class="font-bold text-amber-400 mt-0.5">0 soʻm</p>
-          </div>
-        </div>
+        <p id="profileStore" class="text-[14px] text-neutral-200 uppercase tracking-wide pt-1">K150_CHIRCHIQ O'RMON</p>
       </div>
 
-      <!-- Svetofor 3 ta Karta -->
-      <div class="grid grid-cols-3 gap-2.5">
-        <button onclick="setFilterStatus('critical')" class="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-left transition active:scale-95">
-          <div class="flex justify-between items-center">
-            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-            <span class="text-[10px] font-bold text-rose-400 uppercase">0-2 kun</span>
-          </div>
-          <p id="count-critical" class="text-2xl font-black text-white mt-2">0</p>
-          <p class="text-[11px] text-rose-300/80">Kritik / Oʻtgan</p>
+      <!-- Menyu qatorlari -->
+      <div class="divide-y divide-[#262626] text-[16px]">
+        <button onclick="openMyActionsModal()" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
+          <span class="text-xl">🕒</span>
+          <span>Mening amallarim</span>
         </button>
-
-        <button onclick="setFilterStatus('warning')" class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left transition active:scale-95">
-          <div class="flex justify-between items-center">
-            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-            <span class="text-[10px] font-bold text-amber-300 uppercase">3-7 kun</span>
-          </div>
-          <p id="count-warning" class="text-2xl font-black text-white mt-2">0</p>
-          <p class="text-[11px] text-amber-200/80">Aksiya kerak</p>
+        <button onclick="openCalcModal()" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
+          <span class="text-xl">🗓️</span>
+          <span>Kalkulyator</span>
         </button>
-
-        <button onclick="setFilterStatus('safe')" class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-left transition active:scale-95">
-          <div class="flex justify-between items-center">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-            <span class="text-[10px] font-bold text-emerald-300 uppercase">8+ kun</span>
-          </div>
-          <p id="count-safe" class="text-2xl font-black text-white mt-2">0</p>
-          <p class="text-[11px] text-emerald-200/80">Muddati yaxshi</p>
+        <button onclick="openSettingsModal()" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
+          <span class="text-xl">⚙️</span>
+          <span>Sozlamalar</span>
+        </button>
+        <button onclick="openInstallModal()" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
+          <span class="text-xl">📲</span>
+          <span>Ekranga o‘rnatish (На экран Домой)</span>
+        </button>
+        <button onclick="alert('Ilova versiyasi: 2.4.0 Pro\nIchki shtrix-kod bazasi faol.')" class="w-full px-4 py-4 flex items-center gap-4 text-left active:bg-[#1f1f1f]">
+          <span class="text-xl">ℹ️</span>
+          <span>Ilova haqida</span>
+        </button>
+        <button onclick="clearExpiredHistory()" class="w-full px-4 py-4 flex items-center gap-4 text-left text-rose-400 active:bg-[#1f1f1f]">
+          <span class="text-xl">🚪</span>
+          <span>Chiqish / Ro‘yxatni tozalash</span>
         </button>
       </div>
+    </div>
+  </main>
 
-      <!-- Bo'limlar filtri -->
-      <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-        <button onclick="setFilterCat('ALL')" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold shrink-0">Barchasi</button>
-        <button onclick="setFilterCat('U')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🍰 Qandolat</button>
-        <button onclick="setFilterCat('F')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🧀 Sut va Gastronom</button>
-        <button onclick="setFilterCat('O')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🍉 Meva-sabzavot</button>
-        <button onclick="setFilterCat('D')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">🥫 Oziq-ovqat</button>
-        <button onclick="setFilterCat('S')" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 shrink-0">❄️ Muzlatilgan</button>
-      </div>
+  <!-- SUZUVCHI YASHIL "+" TUGMASI -->
+  <button id="fabAddBtn" onclick="openAddScreen()" class="fixed right-5 bottom-24 z-30 w-14 h-14 rounded-full bg-[#4caf50] hover:bg-[#43a047] text-white text-3xl font-light flex items-center justify-center shadow-xl active:scale-95 transition">
+    +
+  </button>
 
-      <!-- Srokdagi tovarlar ro'yxati -->
-      <div id="inventoryList" class="space-y-2.5"></div>
-    </section>
+  <!-- PASTKI 5 TA TUGMALI KAPSULA NAVIGATSIYA (Skrinshot bilan 1-ga-1) -->
+  <div class="fixed bottom-3 inset-x-3 z-30 max-w-lg mx-auto bottom-pill px-2 py-1.5 grid grid-cols-5 items-center text-center">
+    <button onclick="switchMainTab('home')" id="bnav-home" class="nav-item-active py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-white">
+      <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span class="text-[10px] leading-tight truncate w-full">Asosiy sahifa</span>
+    </button>
 
-    <!-- TAB 2: SKANER VA KOD ORQALI QO'SHISH -->
-    <section id="tab-scanner" class="hidden space-y-4">
-      <div class="p-4 rounded-2xl glass space-y-3">
-        <div class="flex items-center justify-between">
-          <h2 class="font-bold text-sm">📷 Shtrix-kod / SAP-kod kiritish</h2>
-          <button onclick="toggleCamera()" id="camBtn" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs active:scale-95 transition">
-            Kamerani yoqish
+    <button onclick="switchMainTab('markdown')" id="bnav-markdown" class="py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-300">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10m-2.5-7.5c0-1.1 1.1-2 2.5-2s2.5.9 2.5 2c0 2-5 1.5-5 4 0 1.1 1.1 2 2.5 2s2.5-.9 2.5-2"/></svg>
+      <span class="text-[10px] leading-tight truncate w-full">Narxini tushirish uchun</span>
+    </button>
+
+    <button onclick="switchMainTab('rejected')" id="bnav-rejected" class="py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-300">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></svg>
+      <span class="text-[10px] leading-tight truncate w-full">Rad etilgan</span>
+    </button>
+
+    <button onclick="switchMainTab('remove')" id="bnav-remove" class="py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-300">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 4h-4v12l-3-3m3 3l3-3"/></svg>
+      <span class="text-[10px] leading-tight truncate w-full">Olib tashlash uchun</span>
+    </button>
+
+    <button onclick="switchMainTab('options')" id="bnav-options" class="py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-300">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span class="text-[10px] leading-tight truncate w-full">Variantlar</span>
+    </button>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- TO'LIQ EKRAN 1: "MUDDATNI QO'SHISH" (10-rasmga 100% mos) -->
+  <!-- ========================================================= -->
+  <div id="addScreen" class="fixed inset-0 z-40 hidden bg-[#121212] flex flex-col">
+    <!-- Yashil Header -->
+    <div class="header-green px-4 h-14 flex items-center justify-between">
+      <button onclick="closeAddScreen()" class="w-9 h-9 rounded-full bg-black/15 border border-white/20 flex items-center justify-center text-white text-xl">
+        ‹
+      </button>
+      <h2 class="text-[17px] font-semibold text-white">Muddatni qo‘shish</h2>
+      <div class="w-9"></div>
+    </div>
+
+    <div class="p-4 space-y-5 flex-1 overflow-y-auto max-w-lg mx-auto w-full">
+      <!-- Nom yoki SAP + Skaner ikonkasi -->
+      <div>
+        <div class="flex items-center gap-3">
+          <input
+            type="text"
+            id="addSearchInput"
+            oninput="handleCodeLookup(this.value)"
+            placeholder="Nom yoki SAP (Shtrix-kod)"
+            class="flex-1 bg-[#1e1e1e] border border-[#333333] rounded-md px-3.5 py-2.5 text-[15px] text-white placeholder-neutral-500 focus:outline-none focus:border-[#4caf50]"
+          />
+          <button onclick="openScannerScreen()" class="p-2 text-[#4caf50] active:scale-95" title="Shtrix-kod skanerlash">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+              <path d="M7 8v8M11 8v8M15 8v8M18 8v8M4 12h16" stroke-linecap="round"/>
+            </svg>
           </button>
         </div>
 
-        <!-- Kamera oynasi -->
-        <div id="readerWrapper" class="hidden space-y-2">
-          <div id="reader" class="w-full overflow-hidden rounded-2xl border border-emerald-500/40"></div>
-          <p class="text-center text-[11px] text-emerald-400">Shtrix-kodni kameraga tuting...</p>
-        </div>
+        <!-- Qidiruv natijasi (Faqat kod kiritilganda chiqadi) -->
+        <div id="lookupDropdown" class="mt-1 divide-y divide-[#2a2a2a] bg-[#1a1a1a] rounded-md overflow-hidden"></div>
 
-        <!-- Kod kiritish maydoni (faqat kod yozilganda natija chiqadi) -->
-        <div class="flex gap-2">
-          <input
-            type="text"
-            id="scanInput"
-            oninput="lookupByCode(this.value)"
-            placeholder="Bar-kod yoki SAP-kodni kiriting..."
-            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
-          />
-          <button onclick="clearScannerInput()" class="px-3 rounded-xl bg-slate-800 text-slate-400 text-xs font-bold">✕</button>
-        </div>
-        <p id="lookupStatus" class="text-[11px] text-slate-400">Shtrix-kodni skanerlang yoki kamida 4 ta raqam kiriting.</p>
-        <div id="searchResults" class="space-y-1.5"></div>
-      </div>
-
-      <!-- Topilgan mahsulotga srok belgilash kartasi -->
-      <div id="addFormCard" class="p-4 rounded-2xl glass space-y-3">
-        <div class="flex justify-between items-start">
-          <div>
-            <span id="selectedSap" class="text-[11px] font-mono text-emerald-400">KOD: —</span>
-            <h3 id="selectedName" class="font-bold text-base mt-0.5 text-slate-300">Mahsulot hali tanlanmagan</h3>
-          </div>
-          <span id="selectedUnitBadge" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-bold text-slate-300">ШТ</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-[11px] text-slate-400">Yaroqlilik muddati (Srok)</label>
-            <input type="date" id="expDateInput" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" />
-          </div>
-          <div>
-            <label class="text-[11px] text-slate-400">Miqdori (ШТ / КГ)</label>
-            <input type="number" id="qtyInput" step="1" value="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" />
+        <!-- Tanlangan tovar ma'lumoti -->
+        <div id="selectedProductBox" class="hidden mt-3 p-3 rounded-lg bg-[#1b2e1e] border border-[#4caf50]/40">
+          <p id="selProdName" class="text-[15px] font-semibold text-white"></p>
+          <div class="flex justify-between items-center text-xs text-neutral-300 mt-1">
+            <span id="selProdSap"></span>
+            <span id="selProdDept" class="text-[#81c784] font-medium"></span>
           </div>
         </div>
-
-        <!-- Tezkor miqdor tugmalari -->
-        <div id="presetButtons" class="flex gap-1.5 flex-wrap"></div>
-
-        <div>
-          <label class="text-[11px] text-slate-400">1 dona/kg narxi (soʻmda)</label>
-          <input type="number" id="priceInput" value="25000" step="1000" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white" />
-        </div>
-
-        <button onclick="saveBatch()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition">
-          ➕ Nazoratga qoʻshish
-        </button>
       </div>
-    </section>
 
-  </main>
+      <!-- Radio tugmalar -->
+      <div class="space-y-3">
+        <label class="flex items-center gap-3 cursor-pointer" onclick="setExpMode('useby')">
+          <span id="radio-useby" class="w-6 h-6 rounded-full border-2 border-[#4caf50] flex items-center justify-center">
+            <span class="w-3 h-3 rounded-full bg-[#4caf50]"></span>
+          </span>
+          <span class="text-[16px] text-white">Yaroqlilik muddati</span>
+        </label>
 
-  <!-- MODAL 1: "НА ЭКРАН ДОМОЙ" YO'RIQNOMASI -->
-  <div id="installModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="w-full max-w-sm rounded-3xl glass p-5 space-y-4 border border-slate-700">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base">📲 Ekranga ilova qilib chiqarish</h3>
-        <button onclick="closeInstallModal()" class="text-slate-400 text-lg">✕</button>
+        <label class="flex items-center gap-3 cursor-pointer" onclick="setExpMode('bestbefore')">
+          <span id="radio-bestbefore" class="w-6 h-6 rounded-full border-2 border-neutral-400 flex items-center justify-center">
+            <span class="w-3 h-3 rounded-full bg-transparent"></span>
+          </span>
+          <span class="text-[16px] text-white">Quyidagi sanagacha foydalanilsin</span>
+        </label>
       </div>
-      <div class="space-y-3 text-xs text-slate-300">
-        <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
-          <p class="font-bold text-white">🍏 iPhone (Safari orqali):</p>
-          <p>1. Pastdagi <b>«Поделиться» (Ulashish)</b> tugmasini bosing.</p>
-          <p>2. Roʻyxatdan <b>«На экран „Домой“»</b> bandini tanlang va <b>Добавить</b> bosing.</p>
-        </div>
-        <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
-          <p class="font-bold text-white">🤖 Android (Chrome orqali):</p>
-          <p>1. Yuqori oʻng burchakdagi <b>⋮ (3 nuqta)</b> menyusini bosing.</p>
-          <p>2. <b>«Добавить на главный экран»</b> tugmasini bosing.</p>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODAL 2: -30% AKSIYA STIKERI -->
-  <div id="stickerModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="w-full max-w-xs rounded-3xl bg-amber-400 text-slate-950 p-5 space-y-3 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-slate-950/20 pb-2">
-        <span class="font-black text-xs uppercase tracking-widest bg-rose-600 text-white px-2.5 py-0.5 rounded-md">AKSIYA -30%</span>
-        <button onclick="closeStickerModal()" class="font-bold text-sm">✕</button>
+      <div class="flex justify-end">
+        <span class="text-[#4caf50] text-[15px]">Teglar(0)</span>
       </div>
-      <h4 id="stName" class="font-black text-base leading-snug"></h4>
-      <div class="flex justify-between items-end pt-1">
-        <div>
-          <p class="text-[11px] font-semibold opacity-75">Eski narx:</p>
-          <p id="stOldPrice" class="text-sm line-through font-bold opacity-75"></p>
-        </div>
-        <div class="text-right">
-          <p class="text-[11px] font-bold uppercase">Yangi narx:</p>
-          <p id="stNewPrice" class="text-2xl font-black text-rose-700"></p>
+
+      <!-- Muddat va Miqdor bloklari ro'yxati -->
+      <div id="dateBlocksContainer" class="space-y-4">
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <input
+              type="text"
+              id="dateTextInput"
+              oninput="formatDateMask(this)"
+              placeholder="Yaroqlilik muddati (KK.OO.YY)"
+              maxlength="8"
+              inputmode="numeric"
+              class="flex-1 bg-[#1e1e1e] border border-[#333333] rounded-md px-3.5 py-2.5 text-[15px] text-white placeholder-neutral-500 focus:outline-none focus:border-[#4caf50]"
+            />
+            <label class="p-2 text-[#4caf50] cursor-pointer relative">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+              </svg>
+              <input type="date" id="nativeDatePicker" onchange="syncFromNativeDate(this.value)" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+            </label>
+          </div>
+
+          <!-- Miqdori - [ 1 ] + dona -->
+          <div class="flex items-center gap-4 pt-1">
+            <span class="text-[16px] text-white">Miqdori</span>
+            <button onclick="stepQuantity(-1)" class="w-8 h-8 flex items-center justify-center text-[#4caf50] text-2xl font-bold active:scale-90">−</button>
+            <input
+              type="number"
+              id="qtyField"
+              value="1"
+              step="1"
+              class="w-16 bg-[#1e1e1e] border border-[#333333] rounded-md py-1.5 text-center text-[16px] text-white focus:outline-none"
+            />
+            <button onclick="stepQuantity(1)" class="w-8 h-8 flex items-center justify-center text-[#4caf50] text-2xl font-bold active:scale-90">+</button>
+            <span id="unitLabelText" class="text-[16px] text-white">dona</span>
+          </div>
         </div>
       </div>
-      <p id="stBarcode" class="text-[11px] font-mono text-center bg-white/80 py-1 rounded-lg font-bold"></p>
-      <button onclick="window.print()" class="w-full py-2.5 rounded-xl bg-slate-950 text-white font-bold text-xs">
-        🖨️ Stikerni chop etish
+
+      <div class="flex justify-end">
+        <button onclick="resetDateForSecondEntry()" class="text-[#4caf50] text-[15px] font-medium active:opacity-70">+ muddat</button>
+      </div>
+
+      <!-- Yashil Saqlash tugmasi -->
+      <button onclick="saveNewExpiryItem()" class="w-full py-3.5 rounded-md bg-[#439847] hover:bg-[#388e3c] text-white font-medium text-[16px] shadow-md active:scale-[0.99] transition">
+        Saqlash
       </button>
     </div>
   </div>
 
-  <!-- BOTTOM NAVIGATION (Faqat 2 ta asosiy bo'lim: Svetofor va Skaner) -->
-  <nav class="fixed bottom-0 inset-x-0 z-30 glass px-10 py-2 flex justify-around items-center">
-    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center gap-0.5 text-emerald-400 font-bold text-[11px]">
-      <span class="text-lg">🚦</span>
-      <span>Svetofor</span>
-    </button>
-    <button onclick="switchTab('scanner')" id="nav-scanner" class="flex flex-col items-center gap-0.5 text-slate-400 font-semibold text-[11px]">
-      <span class="w-12 h-12 -mt-6 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/30 border-4 border-[#0b0f19]">
-        📷
-      </span>
-      <span>Skaner +</span>
-    </button>
-  </nav>
+  <!-- ========================================================= -->
+  <!-- TO'LIQ EKRAN 2: "SKANERLASH" VA "QO'LDA KIRITISH" (12-13 rasm) -->
+  <!-- ========================================================= -->
+  <div id="scannerScreen" class="fixed inset-0 z-50 hidden bg-black flex flex-col">
+    <!-- Yashil Header -->
+    <div class="header-green px-4 h-14 flex items-center justify-between z-20">
+      <button onclick="closeScannerScreen()" class="w-9 h-9 rounded-full bg-black/15 border border-white/20 flex items-center justify-center text-white text-xl">
+        ‹
+      </button>
+      <h2 class="text-[17px] font-semibold text-white">Skanerlash</h2>
+      <div class="w-9"></div>
+    </div>
+
+    <!-- Kamera va Qorong'ilashgan ramka -->
+    <div class="relative flex-1 bg-black flex flex-col justify-between overflow-hidden">
+      <div id="reader" class="absolute inset-0"></div>
+
+      <!-- Yuqori qorong'i qism + Chiroq ikonkasi -->
+      <div class="relative z-10 h-1/4 bg-black/60 flex justify-end p-5">
+        <button onclick="alert('Kamera fokusda ishlamoqda')" class="text-white/90 h-10 w-10 flex items-center justify-center">
+          ⚡
+        </button>
+      </div>
+
+      <!-- O'rta skaner chizig'i -->
+      <div class="relative z-10 flex-1 border-y border-white/20 flex items-center justify-center pointer-events-none">
+        <div class="w-full h-[1.5px] bg-red-500/80 shadow-[0_0_8px_#ef4444]"></div>
+      </div>
+
+      <!-- Pastki qorong'i qism + "Qo'lda kiritish" tugmasi -->
+      <div class="relative z-10 h-1/3 bg-black/65 flex items-center justify-center">
+        <button onclick="openManualBarcodeDialog()" class="px-6 py-3 text-white text-[17px] font-medium tracking-wide active:opacity-70">
+          Qo‘lda kiritish
+        </button>
+      </div>
+
+      <!-- "Shtrix kodni kiriting" (12-rasmdagi shaffof modal oyna) -->
+      <div id="manualBarcodeModal" class="hidden absolute inset-0 z-30 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6">
+        <div class="w-full max-w-sm rounded-3xl bg-[#3a3633]/95 border border-white/15 p-5 space-y-4 shadow-2xl">
+          <h3 class="text-center text-white text-[16px] font-medium">Shtrix kodni kiriting</h3>
+          <input
+            type="text"
+            id="manualBarcodeField"
+            inputmode="numeric"
+            placeholder="Shtrix-kod yoki SAP..."
+            class="w-full bg-[#524e4b] rounded-xl px-4 py-2.5 text-white text-[16px] focus:outline-none caret-[#4caf50]"
+          />
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <button onclick="closeManualBarcodeDialog()" class="py-2.5 rounded-full bg-[#5c5753] text-white text-[15px] font-medium active:scale-95">
+              Bekor qilish
+            </button>
+            <button onclick="confirmManualBarcode()" class="py-2.5 rounded-full bg-[#5c5753] text-white text-[15px] font-medium active:scale-95">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SOZLAMALAR VA MAXFIY BAZA YUKLASH -->
+  <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl bg-[#1c1c1c] border border-[#333] p-5 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-semibold text-[16px]">⚙️ Sozlamalar</h3>
+        <button onclick="closeSettingsModal()" class="text-neutral-400">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-neutral-400">Do‘kon / Filial nomi</label>
+          <input type="text" id="setStoreInput" value="K150_CHIRCHIQ O'RMON" class="w-full mt-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+        <div>
+          <label class="text-neutral-400">Foydalanuvchi F.I.Sh</label>
+          <input type="text" id="setUserInput" value="Valiyev Yorqinbek" class="w-full mt-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+        <div>
+          <label class="text-neutral-400">Narxini tushirish (Sariq) chegarasi — necha kun qolganda?</label>
+          <input type="number" id="setWarnDays" value="7" class="w-full mt-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+        <div class="pt-2 border-t border-[#2a2a2a]">
+          <button onclick="document.getElementById('secretFileInput').click()" class="w-full py-2.5 rounded-lg bg-[#263928] text-[#81c784] border border-[#4caf50]/30 font-medium text-xs">
+            📥 Ichki Bar-kod.XLSX bazasini yangilash
+          </button>
+        </div>
+      </div>
+      <button onclick="saveSettings()" class="w-full py-2.5 rounded-lg bg-[#4caf50] text-white font-semibold text-sm">
+        Saqlash
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: SANA KALKULYATORI -->
+  <div id="calcModal" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl bg-[#1c1c1c] border border-[#333] p-5 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-semibold text-[16px]">🗓️ Yaroqlilik muddati kalkulyatori</h3>
+        <button onclick="document.getElementById('calcModal').classList.add('hidden')" class="text-neutral-400">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-neutral-400">Ishlab chiqarilgan sana:</label>
+          <input type="date" id="calcProdDate" class="w-full mt-1 bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white" />
+        </div>
+        <div>
+          <label class="text-neutral-400">Saqlash muddati (kun yoki oy):</label>
+          <div class="grid grid-cols-2 gap-2 mt-1">
+            <input type="number" id="calcAddVal" value="30" class="bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white" />
+            <select id="calcAddUnit" class="bg-[#121212] border border-[#333] rounded-lg px-3 py-2 text-sm text-white">
+              <option value="days">Kun</option>
+              <option value="months">Oy</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="runExpiryCalculator()" class="w-full py-2.5 rounded-lg bg-[#4caf50] text-white font-semibold text-sm">Hisoblash</button>
+        <p id="calcResultText" class="text-center text-base font-bold text-[#81c784] pt-1"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: "НА ЭКРАН ДОМОЙ" -->
+  <div id="installModal" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl bg-[#1c1c1c] border border-[#333] p-5 space-y-3 text-xs">
+      <div class="flex justify-between items-center">
+        <h3 class="font-semibold text-sm text-white">📲 Telefon ekraniga chiqarish</h3>
+        <button onclick="document.getElementById('installModal').classList.add('hidden')" class="text-neutral-400">✕</button>
+      </div>
+      <p class="text-neutral-300"><b>iPhone (Safari):</b> Pastdagi <b>Ulashish (Поделиться)</b> tugmasini bosing va <b>«На экран „Домой“»</b> ni tanlang.</p>
+      <p class="text-neutral-300"><b>Android (Chrome):</b> Yuqoridagi <b>⋮</b> menyudan <b>«Добавить на главный экран»</b> ni bosing.</p>
+    </div>
+  </div>
 
   <script>
-    // YASHIRIN ICHKI BAZA (Foydalanuvchiga hech qachon ro'yxat bo'lib ko'rinmaydi)
-    let HIDDEN_DB = [
-      ["117030202-00189", "Стаканчик VIOLETTE Блаженство 100г", "ШТ", "4780090180603, 4780090180559", "U"],
-      ["117030202-00297", "Пирожное Violette Ассорти эклер 150г±10г", "ШТ", "4780090180443, 4780090180818", "U"],
-      ["117040304-00024", "Монэ Эклер", "ШТ", "311147140, 4780099240421, 21304514, 4780099240346", "U"],
-      ["117040304-00025", "Монэ пирожное упаковка", "ШТ", "4780099240353, 311147139, 4780099240360, 4780099240377, 311147141, 4780099240391", "U"],
-      ["117040304-00334", "Торт NOSTALGIA Наполеон фисташка 650г", "ШТ", "22419347", "U"],
-      ["160010202-00005", "Легендарный_колбасно-копч. сыр 200гр", "ШТ", "4780075910157, 4780095550036", "F"],
-      ["161000004-00020", "Сыр Легендарный твердый вакуум, вес", "КГ", "2064072", "F"],
-      ["149000031-00021", "Арбуз нарезка Из Корзинки, 500г", "ШТ", "4780153790435", "O"],
-      ["142030101-00018", "Корм Probalance для активных кошек 415г", "ШТ", "14640011982228, 4640011982221", "D"],
-      ["118010101-00001", "Колбаски ЛАЗЗАТ с сыром зам., вес", "КГ", "2080146", "S"]
+    // =========================================================================
+    // 1. BO'LIMLAR (ОТДЕЛ) XARITASI — Sening Bar-kod.XLSX bazangdagi Группа материалов bo'yicha!
+    // =========================================================================
+    const ALL_DEPARTMENTS = [
+      "БАДы, Сухофрукты",
+      "Бакалея сыпучая",
+      "Бытовая химия",
+      "Вода и напитки",
+      "Готовая еда",
+      "Детская гигиена",
+      "Детское питание",
+      "Замор.г.е и полуф.замор-ые",
+      "Колбасные изделия и мясные деликатесы",
+      "Консервация",
+      "Косметика и гигиена",
+      "Кулинарные добавки",
+      "Макароны и блюда быстрого приготовления",
+      "Масло-жировые продукты",
+      "Молочная продукция",
+      "Морепродукты",
+      "Мучные кондитерские изделия и торты",
+      "Мясо птицы и яйцо",
+      "Непродовольственные товары",
+      "Сахаристые кондитерские изделия",
+      "Снеки",
+      "Сыры",
+      "Товары для животных",
+      "Хлеб и выпечка",
+      "Чай, кофе и какао",
+      "Ягоды и ФРОВ"
     ];
 
-    let BARCODE_INDEX = new Map();
-    let SAP_INDEX = new Map();
-    let currentFilterStatus = 'ALL';
-    let currentFilterCat = 'ALL';
-    let selectedProduct = null;
-    let html5QrCode = null;
-    let cameraActive = false;
+    function mapGroupToDepartment(groupCode) {
+      const g = String(groupCode || '').trim().toUpperCase();
+      const g3 = g.slice(0, 3);
+      const g5 = g.slice(0, 5);
 
-    // Maxfiy admin kirish hisoblagichi (Logotipni 5 marta bosish)
-    let adminTapCount = 0;
-    let adminTapTimer = null;
+      if (g3 === 'D03') return "БАДы, Сухофрукты";
+      if (['D0102', 'D0105', 'D0108', 'D0109'].includes(g5)) return "Бакалея сыпучая";
+      if (['D0103', 'D0110', 'D0111'].includes(g5) || g3 === 'S03') return "Кулинарные добавки";
+      if (['D0101', 'D0104', 'D0112'].includes(g5)) return "Макароны и блюда быстрого приготовления";
+      if (g5 === 'D0107' || g3 === 'F01') return "Масло-жировые продукты";
+      if (g3 === 'D01') return "Бакалея сыпучая";
 
-    function secretAdminTap() {
-      adminTapCount++;
-      clearTimeout(adminTapTimer);
-      if (adminTapCount >= 5) {
-        adminTapCount = 0;
-        document.getElementById('secretFileInput').click();
-      } else {
-        adminTapTimer = setTimeout(() => { adminTapCount = 0; }, 1500);
-      }
+      if (g3 === 'G01') return "Бытовая химия";
+      if (g3 === 'G02') return "Детская гигиена";
+      if (g3 === 'G03') return "Косметика и гигиена";
+
+      if (g3 === 'D02') return "Детское питание";
+      if (g3 === 'D04') return "Товары для животных";
+      if (['D0501', 'D0503', 'D0504'].includes(g5)) return "Сахаристые кондитерские изделия";
+      if (g3 === 'D05' || g3 === 'U04') return "Мучные кондитерские изделия и торты";
+      if (g3 === 'D06') return "Консервация";
+      if (g3 === 'D07') return "Вода и напитки";
+      if (g3 === 'D08') return "Снеки";
+      if (g3 === 'D09') return "Чай, кофе и какао";
+
+      if (g3 === 'F02') return "Молочная продукция";
+      if (g3 === 'F03') return "Колбасные изделия и мясные деликатесы";
+      if (g3 === 'F05') return "Сыры";
+      if (g3 === 'F06' || g3 === 'S01') return "Замор.г.е и полуф.замор-ые";
+
+      if (g3 === 'U01') return "Готовая еда";
+      if (g3 === 'U02' || g3 === 'U06') return "Мясо птицы и яйцо";
+      if (g3 === 'U03') return "Морепродукты";
+      if (g3 === 'U05') return "Хлеб и выпечка";
+
+      if (g.startsWith('O')) return "Ягоды и ФРОВ";
+      if (g.startsWith('I') || g3 === 'S02') return "Непродовольственные товары";
+      return "Бакалея сыпучая";
     }
 
-    // IndexedDB orqali katta bazani brauzerning yashirin xotirasida saqlash
+    // =========================================================================
+    // 2. YASHIRIN BAZA (Faqat shtrix-kod / SAP-kod orqali tovar va uning Bo'limini topadi)
+    // =========================================================================
+    let HIDDEN_DB = [
+      ["117030202-00189", "Стаканчик VIOLETTE Блаженство 100г", "ШТ", "4780090180603, 4780090180559", "U04010101"],
+      ["117030202-00297", "Пирожное Violette Ассорти эклер 150г±10г", "ШТ", "4780090180443, 4780090180818", "U04010101"],
+      ["117040304-00024", "Монэ Эклер", "ШТ", "311147140, 4780099240421, 21304514, 4780099240346", "U04020201"],
+      ["117040304-00334", "Торт NOSTALGIA Наполеон фисташка 650г", "ШТ", "22419347", "U04020301"],
+      ["160010202-00005", "Легендарный_колбасно-копч. сыр 200гр", "ШТ", "4780075910157, 4780095550036", "F05020303"],
+      ["161000004-00020", "Сыр Легендарный твердый вакуум, вес", "КГ", "2064072", "F05010501"],
+      ["149000031-00021", "Арбуз нарезка Из Корзинки, 500г", "ШТ", "4780153790435", "O05020103"],
+      ["142030101-00018", "Корм Probalance для активных кошек 415г", "ШТ", "14640011982228, 4640011982221", "D04020202"],
+      ["118010101-00001", "Колбаски ЛАЗЗАТ с сыром зам., вес", "КГ", "2080146", "S01010702"]
+    ];
+
+    let BARCODE_MAP = new Map();
+    let SAP_MAP = new Map();
+
+    function buildSilentIndex() {
+      BARCODE_MAP.clear();
+      SAP_MAP.clear();
+      HIDDEN_DB.forEach((row) => {
+        const [sap, name, unit, bcsStr, grp] = row;
+        const dept = mapGroupToDepartment(grp);
+        const bcs = String(bcsStr).split(',').map((s) => s.trim()).filter(Boolean);
+        const obj = { sap, name, unit, barcode: bcs[0] || '', dept, grp };
+        SAP_MAP.set(String(sap).toLowerCase(), obj);
+        bcs.forEach((bc) => BARCODE_MAP.set(bc, { sap, name, unit, barcode: bc, dept, grp }));
+      });
+    }
+
+    // IndexedDB xotira
     function saveDbToIndexedDB(data) {
-      const req = indexedDB.open('MuddatProSecretDB', 1);
-      req.onupgradeneeded = (e) => {
-        e.target.result.createObjectStore('store');
-      };
+      const req = indexedDB.open('ShelfyProHiddenDB', 2);
+      req.onupgradeneeded = (e) => e.target.result.createObjectStore('store');
       req.onsuccess = (e) => {
-        const db = e.target.result;
-        const tx = db.transaction('store', 'readwrite');
+        const tx = e.target.result.transaction('store', 'readwrite');
         tx.objectStore('store').put(data, 'catalog');
       };
     }
 
     function loadDbFromIndexedDB() {
       return new Promise((resolve) => {
-        const req = indexedDB.open('MuddatProSecretDB', 1);
-        req.onupgradeneeded = (e) => {
-          e.target.result.createObjectStore('store');
-        };
+        const req = indexedDB.open('ShelfyProHiddenDB', 2);
+        req.onupgradeneeded = (e) => e.target.result.createObjectStore('store');
         req.onsuccess = (e) => {
-          const db = e.target.result;
-          const tx = db.transaction('store', 'readonly');
+          const tx = e.target.result.transaction('store', 'readonly');
           const getReq = tx.objectStore('store').get('catalog');
           getReq.onsuccess = () => resolve(getReq.result || null);
           getReq.onerror = () => resolve(null);
@@ -335,29 +560,13 @@
       });
     }
 
-    // Bazani yashirin indekslash (Faqat Bar-kod va SAP-kod orqali topish uchun)
-    function buildSilentIndex() {
-      BARCODE_INDEX.clear();
-      SAP_INDEX.clear();
-      HIDDEN_DB.forEach((item) => {
-        const [sap, name, unit, barcodesStr, cat] = item;
-        const bcs = String(barcodesStr).split(',').map((s) => s.trim()).filter(Boolean);
-        const prodObj = { sap, name, unit, barcode: bcs[0] || '', cat };
-        SAP_INDEX.set(sap.toLowerCase(), prodObj);
-        // SAP kodning oxirgi raqamlari bo'yicha ham qidirish qulay bo'lishi uchun
-        bcs.forEach((bc) => BARCODE_INDEX.set(bc, { sap, name, unit, barcode: bc, cat }));
-      });
-    }
-
-    async function initSilentDatabase() {
-      // 1. Avval telefonning yashirin IndexedDB xotirasini tekshiramiz
+    async function initDatabase() {
       const cached = await loadDbFromIndexedDB();
       if (cached && Array.isArray(cached) && cached.length > 0) {
         HIDDEN_DB = cached;
         buildSilentIndex();
         return;
       }
-      // 2. Agar serverda baza.json bo'lsa, fon rejimida tortib oladi
       try {
         const res = await fetch('./baza.json');
         if (res.ok) {
@@ -371,12 +580,10 @@
       buildSilentIndex();
     }
 
-    // Maxfiy admin orqali Bar-kod.XLSX yuklanganda
+    // Bar-kod.XLSX yuklanganda to'liq Группа материалов kodi bilan o'qib olish
     function handleSecretUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-      document.getElementById('sysStatus').textContent = "Yangilanmoqda...";
-
       const reader = new FileReader();
       reader.onload = (ev) => {
         const data = new Uint8Array(ev.target.result);
@@ -387,339 +594,571 @@
         rows.forEach((r) => {
           const name = r['Краткий текст материала'];
           const bc = r['Бар-код'];
-          const grp = String(r['Группа материалов'] || 'D');
-          if (name && bc && grp[0] !== 'M') {
+          const grp = String(r['Группа материалов'] || 'D01').trim();
+          if (name && bc && !grp.startsWith('M')) {
             temp.push([
               String(r['Материал'] || '').trim(),
               String(name).trim(),
               String(r['Базовая ЕИ'] || 'ШТ').trim(),
               String(bc).replace(/\.0$/, '').trim(),
-              grp[0]
+              grp
             ]);
           }
         });
         HIDDEN_DB = temp;
         saveDbToIndexedDB(temp);
         buildSilentIndex();
-        document.getElementById('sysStatus').textContent = "Online";
-        alert("Ichki baza muvaffaqiyatli yangilandi va yashirin xotiraga saqlandi!");
+        closeSettingsModal();
+        alert(`Baza yangilandi! ${temp.length.toLocaleString()} ta mahsulot o'z bo'limlariga (Отдел) biriktirildi.`);
       };
       reader.readAsArrayBuffer(file);
     }
 
-    // FAQAT BAR-KOD YOKI SAP-KOD YOZILGANDA QIDIRISH (Ochiq ro'yxat chiqmaydi)
-    function lookupByCode(rawVal) {
-      const q = rawVal.trim();
-      const box = document.getElementById('searchResults');
-      const status = document.getElementById('lookupStatus');
-
-      if (!q) {
-        box.innerHTML = '';
-        status.textContent = "Shtrix-kodni skanerlang yoki SAP-kodni kiriting.";
-        return;
+    // Tepani 5 marta bosganda ham fayl tanlash ochiladi
+    let tapCnt = 0, tapTimer = null;
+    function secretHeaderTap() {
+      tapCnt++;
+      clearTimeout(tapTimer);
+      if (tapCnt >= 5) {
+        tapCnt = 0;
+        document.getElementById('secretFileInput').click();
+      } else {
+        tapTimer = setTimeout(() => { tapCnt = 0; }, 1400);
       }
+    }
 
-      // 1. Aniq Shtrix-kod mos tushsa — darhol formaga chiqaradi!
-      if (BARCODE_INDEX.has(q)) {
-        const prod = BARCODE_INDEX.get(q);
-        selectProductForForm(prod);
-        box.innerHTML = '';
-        status.innerHTML = `<span class="text-emerald-400 font-bold">✅ Shtrix-kod boʻyicha topildi!</span>`;
-        return;
-      }
+    // =========================================================================
+    // 3. ILOVA HOLATI VA RO'YXATLAR LOGIKASI
+    // =========================================================================
+    let mainTab = 'home';        // 'home' | 'markdown' | 'rejected' | 'remove' | 'options'
+    let subTab = 'depts';        // 'depts' | 'items'
+    let activeDepartment = null; // Tanlangan bo'lim (Отдел)
+    let selectedProduct = null;
+    let expMode = 'useby';
+    let html5QrCode = null;
 
-      // 2. Aniq SAP-kod mos tushsa — darhol formaga chiqaradi!
-      if (SAP_INDEX.has(q.toLowerCase())) {
-        const prod = SAP_INDEX.get(q.toLowerCase());
-        selectProductForForm(prod);
-        box.innerHTML = '';
-        status.innerHTML = `<span class="text-emerald-400 font-bold">✅ SAP-kod boʻyicha topildi!</span>`;
-        return;
-      }
+    let appConfig = JSON.parse(localStorage.getItem('sh_config') || '{"store":"K150_CHIRCHIQ O\'RMON","user":"Valiyev Yorqinbek","warnDays":7}');
+    let itemsList = JSON.parse(localStorage.getItem('sh_items') || '[]');
 
-      // 3. Kamida 4 ta belgi (SAP-kod qismi yoki shtrix-kod qismi) yozilmaguncha hech narsa ko'rsatmaydi
-      if (q.length < 4) {
-        box.innerHTML = '';
-        status.textContent = "Topish uchun kamida 4 ta raqam/belgi kiriting...";
-        return;
-      }
+    function daysLeft(isoDate) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const exp = new Date(isoDate);
+      exp.setHours(0, 0, 0, 0);
+      return Math.round((exp - now) / 86400000);
+    }
 
-      // Faqat kod bo'yicha eng yaqin 5 ta natijani chiqaradi (butun bazani ko'rsatmaydi)
-      const matches = [];
-      const qLower = q.toLowerCase();
-      for (const item of HIDDEN_DB) {
-        const [sap, name, unit, bcs, cat] = item;
-        if (sap.toLowerCase().includes(qLower) || bcs.includes(q)) {
-          matches.push({ sap, name, unit, barcode: bcs.split(',')[0].trim(), cat });
-          if (matches.length >= 5) break;
+    // Hozirgi pastki tabga mos tushadigan mahsulotlar
+    function getItemsForCurrentMainTab() {
+      const warnLimit = Number(appConfig.warnDays) || 7;
+      return itemsList.filter((item) => {
+        const d = daysLeft(item.expDate);
+        if (mainTab === 'home') return item.status !== 'removed';
+        if (mainTab === 'markdown') return item.status === 'markdown' || (item.status === 'active' && d > 0 && d <= warnLimit);
+        if (mainTab === 'rejected') return item.status === 'rejected';
+        if (mainTab === 'remove') return item.status === 'remove' || (item.status === 'active' && d <= 0);
+        return true;
+      });
+    }
+
+    function updateHeaderAndNavigation() {
+      const titleEl = document.getElementById('headerTitle');
+      const backBtn = document.getElementById('backBtn');
+      const spacer = document.getElementById('headerSpacer');
+      const subTabsBar = document.getElementById('subTabsBar');
+      const fab = document.getElementById('fabAddBtn');
+
+      // Pastki 5 ta tugma aktivligi
+      ['home', 'markdown', 'rejected', 'remove', 'options'].forEach((t) => {
+        const btn = document.getElementById(`bnav-${t}`);
+        if (t === mainTab) {
+          btn.className = "nav-item-active py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-white";
+        } else {
+          btn.className = "py-1.5 px-1 flex flex-col items-center justify-center gap-0.5 text-neutral-400";
         }
-      }
-
-      if (matches.length === 0) {
-        box.innerHTML = '';
-        status.innerHTML = `<span class="text-rose-400">Bu kod boʻyicha mahsulot topilmadi.</span>`;
-        return;
-      }
-
-      status.textContent = `Kod boʻyicha topildi (${matches.length}):`;
-      box.innerHTML = matches.map((m) => `
-        <div onclick='selectProductForForm(${JSON.stringify(m)})' class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 flex justify-between items-center cursor-pointer active:scale-95 transition">
-          <div>
-            <p class="text-xs font-bold text-white">${m.name}</p>
-            <p class="text-[10px] text-slate-400 font-mono">SAP: ${m.sap} • Barkod: ${m.barcode}</p>
-          </div>
-          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">${m.unit}</span>
-        </div>
-      `).join('');
-    }
-
-    function clearScannerInput() {
-      document.getElementById('scanInput').value = '';
-      document.getElementById('searchResults').innerHTML = '';
-      document.getElementById('lookupStatus').textContent = "Shtrix-kodni skanerlang yoki SAP-kodni kiriting.";
-    }
-
-    // Srokdagi partiyalar (LocalStorage)
-    let batches = JSON.parse(localStorage.getItem('mp_batches') || 'null') || [
-      { id: 1, sap: "117040304-00334", name: "Торт NOSTALGIA Наполеон фисташка 650г", unit: "ШТ", barcode: "22419347", cat: "U", expDate: offsetDate(1), qty: 3, price: 68000, discount: false },
-      { id: 2, sap: "160010202-00005", name: "Легендарный_колбасно-копч. сыр 200гр", unit: "ШТ", barcode: "4780075910157", cat: "F", expDate: offsetDate(4), qty: 8, price: 24000, discount: false }
-    ];
-    let stats = JSON.parse(localStorage.getItem('mp_stats') || '{"saved": 420000, "loss": 65000}');
-
-    function offsetDate(days) {
-      const d = new Date();
-      d.setDate(d.getDate() + days);
-      return d.toISOString().split('T')[0];
-    }
-
-    function daysRemaining(dateStr) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const target = new Date(dateStr);
-      target.setHours(0, 0, 0, 0);
-      return Math.round((target - today) / (1000 * 60 * 60 * 24));
-    }
-
-    function renderDashboard() {
-      localStorage.setItem('mp_batches', JSON.stringify(batches));
-      localStorage.setItem('mp_stats', JSON.stringify(stats));
-
-      let crit = 0, warn = 0, safe = 0, riskSum = 0;
-      batches.forEach((b) => {
-        const d = daysRemaining(b.expDate);
-        if (d <= 2) { crit++; riskSum += b.qty * b.price; }
-        else if (d <= 7) { warn++; riskSum += b.qty * b.price; }
-        else safe++;
       });
 
-      document.getElementById('count-critical').textContent = crit;
-      document.getElementById('count-warning').textContent = warn;
-      document.getElementById('count-safe').textContent = safe;
-      document.getElementById('savedMoneyText').textContent = stats.saved.toLocaleString() + " soʻm";
-      document.getElementById('riskMoneyText').textContent = Math.round(riskSum).toLocaleString() + " soʻm";
-      document.getElementById('lossMoneyText').textContent = stats.loss.toLocaleString() + " soʻm";
-
-      const listEl = document.getElementById('inventoryList');
-      const filtered = batches
-        .filter((b) => {
-          const d = daysRemaining(b.expDate);
-          if (currentFilterStatus === 'critical' && d > 2) return false;
-          if (currentFilterStatus === 'warning' && (d <= 2 || d > 7)) return false;
-          if (currentFilterStatus === 'safe' && d <= 7) return false;
-          if (currentFilterCat !== 'ALL' && b.cat !== currentFilterCat) return false;
-          return true;
-        })
-        .sort((a, b) => daysRemaining(a.expDate) - daysRemaining(b.expDate));
-
-      if (filtered.length === 0) {
-        listEl.innerHTML = `<div class="p-8 rounded-2xl glass text-center text-xs text-slate-400">Hozircha bu boʻlimda tovarlar yoʻq 🎉</div>`;
+      if (mainTab === 'options') {
+        titleEl.textContent = "Variantlar";
+        subTabsBar.classList.add('hidden');
+        fab.classList.add('hidden');
+        backBtn.classList.add('hidden');
+        spacer.classList.remove('hidden');
+        document.getElementById('deptsContainer').classList.add('hidden');
+        document.getElementById('itemsContainer').classList.add('hidden');
+        document.getElementById('optionsContainer').classList.remove('hidden');
+        document.getElementById('profileName').textContent = appConfig.user;
+        document.getElementById('profileStore').textContent = appConfig.store;
         return;
       }
 
-      listEl.innerHTML = filtered.map((b) => {
-        const d = daysRemaining(b.expDate);
-        const badgeClass = d <= 2
-          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+      document.getElementById('optionsContainer').classList.add('hidden');
+      subTabsBar.classList.remove('hidden');
+      fab.classList.toggle('hidden', mainTab !== 'home');
+
+      if (activeDepartment) {
+        titleEl.textContent = activeDepartment;
+        backBtn.classList.remove('hidden');
+        spacer.classList.add('hidden');
+      } else {
+        backBtn.classList.add('hidden');
+        spacer.classList.remove('hidden');
+        if (mainTab === 'home') titleEl.textContent = appConfig.store;
+        if (mainTab === 'markdown') titleEl.textContent = "Narxini tushirish uchun";
+        if (mainTab === 'rejected') titleEl.textContent = "Rad etilgan";
+        if (mainTab === 'remove') titleEl.textContent = "Olib tashlash uchun";
+      }
+
+      // Sub-tab chizig'i
+      const btnDepts = document.getElementById('subtab-depts');
+      const btnItems = document.getElementById('subtab-items');
+      if (subTab === 'depts') {
+        btnDepts.className = "py-3.5 text-[15px] font-medium text-white border-b-2 border-[#4caf50] transition";
+        btnItems.className = "py-3.5 text-[15px] font-medium text-neutral-400 border-b-2 border-transparent transition";
+      } else {
+        btnItems.className = "py-3.5 text-[15px] font-medium text-white border-b-2 border-[#4caf50] transition";
+        btnDepts.className = "py-3.5 text-[15px] font-medium text-neutral-400 border-b-2 border-transparent transition";
+      }
+
+      renderMainLists();
+    }
+
+    function renderMainLists() {
+      localStorage.setItem('sh_items', JSON.stringify(itemsList));
+      const deptsBox = document.getElementById('deptsContainer');
+      const itemsBox = document.getElementById('itemsContainer');
+      const tabItems = getItemsForCurrentMainTab();
+
+      // 1. BO'LIMLAR (ОТДЕЛ) RO'YXATI
+      if (subTab === 'depts' && !activeDepartment) {
+        deptsBox.classList.remove('hidden');
+        itemsBox.classList.add('hidden');
+
+        // Asosiy sahifada barcha 26 ta bo'lim chiqadi; boshqa tablarda esa ichida tovari bor bo'limlar chiqadi
+        const deptCounts = {};
+        tabItems.forEach((it) => {
+          deptCounts[it.dept] = (deptCounts[it.dept] || 0) + 1;
+        });
+
+        const deptsToShow = mainTab === 'home'
+          ? ALL_DEPARTMENTS
+          : ALL_DEPARTMENTS.filter((d) => deptCounts[d] > 0);
+
+        if (deptsToShow.length === 0) {
+          deptsBox.innerHTML = `
+            <div class="h-[62vh] flex items-center justify-center px-6 text-center">
+              <p class="text-[16px] text-neutral-300">Ko‘rsatiladigan ma’lumotlar mavjud emas</p>
+            </div>
+          `;
+          return;
+        }
+
+        deptsBox.innerHTML = deptsToShow.map((deptName) => {
+          const cnt = deptCounts[deptName] || 0;
+          return `
+            <div onclick="openDepartment('${deptName}')" class="dept-row px-4 py-4 flex items-center justify-between cursor-pointer">
+              <span class="text-[16px] text-neutral-100">${deptName}</span>
+              ${cnt > 0 ? `<span class="text-xs px-2.5 py-0.5 rounded-full bg-[#4caf50]/20 text-[#81c784] font-semibold">${cnt}</span>` : ''}
+            </div>
+          `;
+        }).join('');
+        return;
+      }
+
+      // 2. BARCHA MUDDATLAR (YOKI TANLANGAN BO'LIM ICHIDAGI TOVARLAR)
+      deptsBox.classList.add('hidden');
+      itemsBox.classList.remove('hidden');
+
+      const filtered = activeDepartment
+        ? tabItems.filter((i) => i.dept === activeDepartment)
+        : tabItems;
+
+      filtered.sort((a, b) => daysLeft(a.expDate) - daysLeft(b.expDate));
+
+      if (filtered.length === 0) {
+        itemsBox.innerHTML = `
+          <div class="h-[62vh] flex items-center justify-center px-6 text-center">
+            <p class="text-[16px] text-neutral-300">Ko‘rsatiladigan ma’lumotlar mavjud emas</p>
+          </div>
+        `;
+        return;
+      }
+
+      itemsBox.innerHTML = filtered.map((item) => {
+        const d = daysLeft(item.expDate);
+        const badgeColor = d <= 0
+          ? 'bg-red-500/20 text-red-400 border-red-500/30'
           : d <= 7
-          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
-        const dayText = d < 0 ? `${Math.abs(d)} kun oʻtgan!` : d === 0 ? 'Bugun tugaydi!' : `${d} kun qoldi`;
+          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+        const dText = d < 0 ? `${Math.abs(d)} kun o‘tdi` : d === 0 ? 'Bugun' : `${d} kun`;
 
         return `
-          <div class="p-3.5 rounded-2xl glass space-y-2.5 border-l-4 ${d <= 2 ? 'border-l-rose-500' : d <= 7 ? 'border-l-amber-400' : 'border-l-emerald-500'}">
+          <div class="p-4 bg-[#141414] space-y-2">
             <div class="flex justify-between items-start gap-2">
               <div>
-                <div class="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono">
-                  <span>SAP: ${b.sap}</span>
-                  <span>•</span>
-                  <span>#${b.barcode}</span>
-                  ${b.discount ? '<span class="px-1.5 py-0.2 bg-amber-400 text-slate-950 font-black rounded">-30% AKSIYA</span>' : ''}
-                </div>
-                <h4 class="font-bold text-sm text-white mt-0.5">${b.name}</h4>
+                <p class="text-[11px] text-[#81c784] font-medium">${item.dept}</p>
+                <h4 class="text-[15px] font-medium text-white leading-snug mt-0.5">${item.name}</h4>
+                <p class="text-xs text-neutral-400 font-mono mt-0.5">SAP: ${item.sap} • ШК: ${item.barcode}</p>
               </div>
-              <span class="px-2.5 py-1 rounded-xl text-[11px] font-bold border shrink-0 ${badgeClass}">
-                ${dayText}
+              <span class="px-2.5 py-1 rounded-md text-xs font-semibold border shrink-0 ${badgeColor}">
+                ${dText}
               </span>
             </div>
 
-            <div class="flex justify-between items-center text-xs text-slate-300 bg-slate-900/70 px-3 py-2 rounded-xl">
-              <span>📦 Qoldiq: <b>${b.qty} ${b.unit}</b></span>
-              <span>📅 Srok: <b>${b.expDate}</b></span>
-              <span class="text-emerald-400 font-bold">${Math.round(b.qty * b.price).toLocaleString()} soʻm</span>
+            <div class="flex justify-between items-center text-xs text-neutral-300 pt-1">
+              <span>Muddati: <b>${item.displayDate}</b></span>
+              <span>Miqdori: <b>${item.qty} ${item.unit === 'КГ' ? 'kg' : 'dona'}</b></span>
             </div>
 
-            <div class="grid grid-cols-4 gap-1.5 pt-1">
-              <button onclick="openStickerModal(${b.id})" class="py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold active:scale-95">🏷️ -30%</button>
-              <button onclick="resolveBatch(${b.id}, 'sold')" class="py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold active:scale-95">✅ Sotildi</button>
-              <button onclick="resolveBatch(${b.id}, 'return')" class="py-1.5 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[11px] font-bold active:scale-95">↩️ Vozvrat</button>
-              <button onclick="resolveBatch(${b.id}, 'waste')" class="py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold active:scale-95">🗑️ Spisaniye</button>
+            <div class="grid grid-cols-4 gap-1.5 pt-2">
+              <button onclick="setItemStatus(${item.id}, 'markdown')" class="py-1.5 rounded bg-[#262626] text-amber-300 text-[11px] font-medium active:scale-95">💲 Arzonlatish</button>
+              <button onclick="setItemStatus(${item.id}, 'rejected')" class="py-1.5 rounded bg-[#262626] text-orange-300 text-[11px] font-medium active:scale-95">🚫 Rad etish</button>
+              <button onclick="setItemStatus(${item.id}, 'remove')" class="py-1.5 rounded bg-[#262626] text-rose-300 text-[11px] font-medium active:scale-95">⤵️ Olib tashlash</button>
+              <button onclick="deleteItem(${item.id})" class="py-1.5 rounded bg-[#262626] text-neutral-400 text-[11px] font-medium active:scale-95">🗑️ O‘chirish</button>
             </div>
           </div>
         `;
       }).join('');
     }
 
-    function setFilterStatus(st) {
-      currentFilterStatus = currentFilterStatus === st ? 'ALL' : st;
-      renderDashboard();
+    function switchMainTab(tab) {
+      mainTab = tab;
+      activeDepartment = null;
+      updateHeaderAndNavigation();
     }
 
-    function setFilterCat(cat) {
-      currentFilterCat = cat;
-      renderDashboard();
+    function setSubTab(st) {
+      subTab = st;
+      if (st === 'depts') activeDepartment = null;
+      updateHeaderAndNavigation();
     }
 
-    function resolveBatch(id, action) {
-      const idx = batches.findIndex((x) => x.id === id);
-      if (idx === -1) return;
-      const b = batches[idx];
-      const val = Math.round(b.qty * b.price);
-      if (action === 'sold') stats.saved += val;
-      else stats.loss += val;
-      batches.splice(idx, 1);
-      renderDashboard();
+    function openDepartment(deptName) {
+      activeDepartment = deptName;
+      subTab = 'items';
+      updateHeaderAndNavigation();
     }
 
-    function toggleCamera() {
-      const wrap = document.getElementById('readerWrapper');
-      const btn = document.getElementById('camBtn');
-      if (!cameraActive) {
-        wrap.classList.remove('hidden');
-        btn.textContent = "Kamerani oʻchirish";
-        html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 120 } },
-          (decodedText) => {
-            document.getElementById('scanInput').value = decodedText;
-            lookupByCode(decodedText);
-            if (navigator.vibrate) navigator.vibrate(100);
-          },
-          () => {}
-        ).catch(() => {
-          alert("Kamerani yoqish uchun ruxsat bering.");
-        });
-        cameraActive = true;
-      } else {
-        if (html5QrCode) html5QrCode.stop().then(() => html5QrCode.clear());
-        wrap.classList.add('hidden');
-        btn.textContent = "Kamerani yoqish";
-        cameraActive = false;
+    function closeDepartmentFilter() {
+      activeDepartment = null;
+      subTab = 'depts';
+      updateHeaderAndNavigation();
+    }
+
+    function setItemStatus(id, st) {
+      const it = itemsList.find((x) => x.id === id);
+      if (it) {
+        it.status = st;
+        renderMainLists();
       }
     }
 
-    function selectProductForForm(prod) {
-      selectedProduct = prod;
-      document.getElementById('selectedSap').textContent = `SAP: ${prod.sap} • #${prod.barcode}`;
-      document.getElementById('selectedName').textContent = prod.name;
-      document.getElementById('selectedName').className = "font-bold text-base mt-0.5 text-white";
-      document.getElementById('selectedUnitBadge').textContent = prod.unit;
-      document.getElementById('searchResults').innerHTML = '';
+    function deleteItem(id) {
+      itemsList = itemsList.filter((x) => x.id !== id);
+      renderMainLists();
+    }
 
-      const qtyInput = document.getElementById('qtyInput');
-      const presetBox = document.getElementById('presetButtons');
+    // =========================================================================
+    // 4. "MUDDATNI QO'SHISH" VA SKANER FUNKSIYALARI
+    // =========================================================================
+    function openAddScreen() {
+      document.getElementById('addScreen').classList.remove('hidden');
+      document.getElementById('addSearchInput').value = '';
+      document.getElementById('lookupDropdown').innerHTML = '';
+      document.getElementById('selectedProductBox').classList.add('hidden');
+      document.getElementById('dateTextInput').value = '';
+      document.getElementById('qtyField').value = '1';
+      selectedProduct = null;
+    }
 
-      if (prod.unit === 'КГ') {
-        qtyInput.step = "0.05";
-        qtyInput.value = "0.5";
-        presetBox.innerHTML = [0.25, 0.5, 1.0, 2.5, 5.0].map((v) =>
-          `<button onclick="document.getElementById('qtyInput').value=${v}" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-bold text-emerald-300 border border-slate-700">+${v} kg</button>`
-        ).join('');
+    function closeAddScreen() {
+      document.getElementById('addScreen').classList.add('hidden');
+    }
+
+    function setExpMode(mode) {
+      expMode = mode;
+      const r1 = document.getElementById('radio-useby');
+      const r2 = document.getElementById('radio-bestbefore');
+      if (mode === 'useby') {
+        r1.className = "w-6 h-6 rounded-full border-2 border-[#4caf50] flex items-center justify-center";
+        r1.innerHTML = `<span class="w-3 h-3 rounded-full bg-[#4caf50]"></span>`;
+        r2.className = "w-6 h-6 rounded-full border-2 border-neutral-400 flex items-center justify-center";
+        r2.innerHTML = `<span class="w-3 h-3 rounded-full bg-transparent"></span>`;
       } else {
-        qtyInput.step = "1";
-        qtyInput.value = "1";
-        presetBox.innerHTML = [1, 2, 5, 10, 12, 24].map((v) =>
-          `<button onclick="document.getElementById('qtyInput').value=${v}" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-bold text-emerald-300 border border-slate-700">${v} dona</button>`
-        ).join('');
+        r2.className = "w-6 h-6 rounded-full border-2 border-[#4caf50] flex items-center justify-center";
+        r2.innerHTML = `<span class="w-3 h-3 rounded-full bg-[#4caf50]"></span>`;
+        r1.className = "w-6 h-6 rounded-full border-2 border-neutral-400 flex items-center justify-center";
+        r1.innerHTML = `<span class="w-3 h-3 rounded-full bg-transparent"></span>`;
       }
     }
 
-    function saveBatch() {
-      if (!selectedProduct) {
-        alert("Avval shtrix-kodni skanerlang yoki SAP-kodni kiriting!");
+    function handleCodeLookup(val) {
+      const q = val.trim();
+      const drop = document.getElementById('lookupDropdown');
+      if (!q) { drop.innerHTML = ''; return; }
+
+      // 1. Aniq shtrix-kod bo'yicha
+      if (BARCODE_MAP.has(q)) {
+        chooseProduct(BARCODE_MAP.get(q));
+        drop.innerHTML = '';
         return;
       }
-      const expDate = document.getElementById('expDateInput').value;
-      const qty = parseFloat(document.getElementById('qtyInput').value) || 1;
-      const price = parseFloat(document.getElementById('priceInput').value) || 15000;
+      // 2. Aniq SAP-kod bo'yicha
+      if (SAP_MAP.has(q.toLowerCase())) {
+        chooseProduct(SAP_MAP.get(q.toLowerCase()));
+        drop.innerHTML = '';
+        return;
+      }
 
-      batches.unshift({
-        id: Date.now(),
+      if (q.length < 3) { drop.innerHTML = ''; return; }
+
+      const matches = [];
+      const ql = q.toLowerCase();
+      for (const row of HIDDEN_DB) {
+        const [sap, name, unit, bcs, grp] = row;
+        if (sap.toLowerCase().includes(ql) || bcs.includes(q) || name.toLowerCase().includes(ql)) {
+          matches.push({
+            sap,
+            name,
+            unit,
+            barcode: String(bcs).split(',')[0].trim(),
+            dept: mapGroupToDepartment(grp)
+          });
+          if (matches.length >= 6) break;
+        }
+      }
+
+      drop.innerHTML = matches.map((m) => `
+        <div onclick='chooseProduct(${JSON.stringify(m).replace(/'/g, "&#39;")})' class="p-3 hover:bg-[#252525] cursor-pointer flex justify-between items-center">
+          <div>
+            <p class="text-sm text-white font-medium">${m.name}</p>
+            <p class="text-[11px] text-neutral-400">SAP: ${m.sap} • Bo‘lim: ${m.dept}</p>
+          </div>
+          <span class="text-xs text-[#81c784] font-bold">${m.unit}</span>
+        </div>
+      `).join('');
+    }
+
+    function chooseProduct(prod) {
+      selectedProduct = prod;
+      document.getElementById('addSearchInput').value = `${prod.name} (${prod.sap})`;
+      document.getElementById('lookupDropdown').innerHTML = '';
+      document.getElementById('selectedProductBox').classList.remove('hidden');
+      document.getElementById('selProdName').textContent = prod.name;
+      document.getElementById('selProdSap').textContent = `SAP: ${prod.sap} | ШК: ${prod.barcode}`;
+      document.getElementById('selProdDept').textContent = prod.dept;
+
+      const unitTxt = document.getElementById('unitLabelText');
+      const qtyField = document.getElementById('qtyField');
+      if (prod.unit === 'КГ') {
+        unitTxt.textContent = 'kg';
+        qtyField.step = '0.1';
+      } else {
+        unitTxt.textContent = 'dona';
+        qtyField.step = '1';
+      }
+    }
+
+    // KK.OO.YY sana formatlagich
+    function formatDateMask(input) {
+      let digits = input.value.replace(/\D/g, '');
+      if (digits.length > 6) digits = digits.slice(0, 6);
+      let out = '';
+      if (digits.length > 0) out += digits.slice(0, 2);
+      if (digits.length >= 3) out += '.' + digits.slice(2, 4);
+      if (digits.length >= 5) out += '.' + digits.slice(4, 6);
+      input.value = out;
+    }
+
+    function syncFromNativeDate(val) {
+      if (!val) return;
+      const [yyyy, mm, dd] = val.split('-');
+      document.getElementById('dateTextInput').value = `${dd}.${mm}.${yyyy.slice(2)}`;
+    }
+
+    function parseDateInputToISO(str) {
+      const parts = str.trim().split('.');
+      if (parts.length === 3) {
+        const dd = parts[0].padStart(2, '0');
+        const mm = parts[1].padStart(2, '0');
+        const yy = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+        return `${yy}-${mm}-${dd}`;
+      }
+      return null;
+    }
+
+    function stepQuantity(delta) {
+      const el = document.getElementById('qtyField');
+      const isKg = selectedProduct && selectedProduct.unit === 'КГ';
+      const step = isKg ? 0.5 : 1;
+      let val = parseFloat(el.value) || 0;
+      val = Math.max(isKg ? 0.1 : 1, +(val + delta * step).toFixed(2));
+      el.value = val;
+    }
+
+    function resetDateForSecondEntry() {
+      if (!selectedProduct) {
+        alert("Avval mahsulotni skanerlang yoki tanlang!");
+        return;
+      }
+      saveCurrentEntryInternal(false);
+      document.getElementById('dateTextInput').value = '';
+      document.getElementById('qtyField').value = '1';
+      alert("Birinchi muddat saqlandi! Endi shu tovarning keyingi muddatini kiriting.");
+    }
+
+    function saveNewExpiryItem() {
+      if (saveCurrentEntryInternal(true)) {
+        closeAddScreen();
+        updateHeaderAndNavigation();
+      }
+    }
+
+    function saveCurrentEntryInternal(showErr) {
+      if (!selectedProduct) {
+        if (showErr) alert("Iltimos, avval shtrix-kodni skanerlang yoki SAP-kodni kiriting!");
+        return false;
+      }
+      const rawDate = document.getElementById('dateTextInput').value;
+      const isoDate = parseDateInputToISO(rawDate);
+      if (!isoDate) {
+        if (showErr) alert("Yaroqlilik muddatini KK.OO.YY formatida kiriting (masalan: 15.11.26)");
+        return false;
+      }
+      const qty = parseFloat(document.getElementById('qtyField').value) || 1;
+
+      itemsList.unshift({
+        id: Date.now() + Math.floor(Math.random() * 1000),
         sap: selectedProduct.sap,
         name: selectedProduct.name,
         unit: selectedProduct.unit,
         barcode: selectedProduct.barcode,
-        cat: selectedProduct.cat || 'U',
-        expDate,
+        dept: selectedProduct.dept || "Бакалея сыпучая",
+        expDate: isoDate,
+        displayDate: rawDate,
         qty,
-        price,
-        discount: false
+        mode: expMode,
+        status: 'active'
       });
-
-      clearScannerInput();
-      switchTab('dashboard');
-      renderDashboard();
+      localStorage.setItem('sh_items', JSON.stringify(itemsList));
+      return true;
     }
 
-    function openStickerModal(id) {
-      const b = batches.find((x) => x.id === id);
-      if (!b) return;
-      b.discount = true;
-      document.getElementById('stName').textContent = b.name;
-      document.getElementById('stOldPrice').textContent = b.price.toLocaleString() + " soʻm";
-      document.getElementById('stNewPrice').textContent = Math.round(b.price * 0.7).toLocaleString() + " soʻm";
-      document.getElementById('stBarcode').textContent = `SAP: ${b.sap} | ${b.barcode}`;
-      document.getElementById('stickerModal').classList.remove('hidden');
-      renderDashboard();
+    // =========================================================================
+    // 5. KAMERA SKANERI VA "QO'LDA KIRITISH" DIALOGI
+    // =========================================================================
+    function openScannerScreen() {
+      document.getElementById('scannerScreen').classList.remove('hidden');
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 260, height: 140 } },
+        (decodedText) => {
+          if (navigator.vibrate) navigator.vibrate(100);
+          closeScannerScreen();
+          document.getElementById('addSearchInput').value = decodedText;
+          handleCodeLookup(decodedText);
+        },
+        () => {}
+      ).catch(() => {});
     }
 
-    function closeStickerModal() {
-      document.getElementById('stickerModal').classList.add('hidden');
+    function closeScannerScreen() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
+      }
+      document.getElementById('manualBarcodeModal').classList.add('hidden');
+      document.getElementById('scannerScreen').classList.add('hidden');
     }
 
-    function switchTab(tab) {
-      ['dashboard', 'scanner'].forEach((t) => {
-        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
-        const nav = document.getElementById(`nav-${t}`);
-        if (nav) nav.className = t === tab
-          ? 'flex flex-col items-center gap-0.5 text-emerald-400 font-bold text-[11px]'
-          : 'flex flex-col items-center gap-0.5 text-slate-400 font-semibold text-[11px]';
-      });
+    function openManualBarcodeDialog() {
+      document.getElementById('manualBarcodeField').value = '';
+      document.getElementById('manualBarcodeModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('manualBarcodeField').focus(), 100);
+    }
+
+    function closeManualBarcodeDialog() {
+      document.getElementById('manualBarcodeModal').classList.add('hidden');
+    }
+
+    function confirmManualBarcode() {
+      const code = document.getElementById('manualBarcodeField').value.trim();
+      if (!code) return;
+      closeScannerScreen();
+      document.getElementById('addSearchInput').value = code;
+      handleCodeLookup(code);
+    }
+
+    // =========================================================================
+    // 6. VARIANTLAR VA QO'SHIMCHA MODALLAR
+    // =========================================================================
+    function openTopMenu() {
+      openSettingsModal();
+    }
+
+    function openSettingsModal() {
+      document.getElementById('setStoreInput').value = appConfig.store;
+      document.getElementById('setUserInput').value = appConfig.user;
+      document.getElementById('setWarnDays').value = appConfig.warnDays;
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function saveSettings() {
+      appConfig.store = document.getElementById('setStoreInput').value.trim() || "K150_CHIRCHIQ O'RMON";
+      appConfig.user = document.getElementById('setUserInput').value.trim() || "Valiyev Yorqinbek";
+      appConfig.warnDays = parseInt(document.getElementById('setWarnDays').value, 10) || 7;
+      localStorage.setItem('sh_config', JSON.stringify(appConfig));
+      closeSettingsModal();
+      updateHeaderAndNavigation();
+    }
+
+    function openCalcModal() {
+      document.getElementById('calcProdDate').valueAsDate = new Date();
+      document.getElementById('calcResultText').textContent = '';
+      document.getElementById('calcModal').classList.remove('hidden');
+    }
+
+    function runExpiryCalculator() {
+      const dVal = document.getElementById('calcProdDate').value;
+      if (!dVal) return;
+      const count = parseInt(document.getElementById('calcAddVal').value, 10) || 0;
+      const unit = document.getElementById('calcAddUnit').value;
+      const d = new Date(dVal);
+      if (unit === 'months') d.setMonth(d.getMonth() + count);
+      else d.setDate(d.getDate() + count);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yy = String(d.getFullYear()).slice(2);
+      document.getElementById('calcResultText').textContent = `Yaroqlilik muddati: ${dd}.${mm}.${yy}`;
+    }
+
+    function openMyActionsModal() {
+      alert(`Jami kiritilgan muddatlar: ${itemsList.length} ta`);
     }
 
     function openInstallModal() {
       document.getElementById('installModal').classList.remove('hidden');
     }
-    function closeInstallModal() {
-      document.getElementById('installModal').classList.add('hidden');
+
+    function clearExpiredHistory() {
+      if (confirm("Barcha kiritilgan muddatlar ro'yxatini tozalamoqchimisiz?")) {
+        itemsList = [];
+        localStorage.setItem('sh_items', '[]');
+        updateHeaderAndNavigation();
+      }
     }
 
-    document.getElementById('expDateInput').value = offsetDate(3);
+    // Ilovani ishga tushirish
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
-    initSilentDatabase();
-    renderDashboard();
+    initDatabase();
+    updateHeaderAndNavigation();
   </script>
 </body>
 </html>
